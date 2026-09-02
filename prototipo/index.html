@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUMANE — Inicio</title>
+<meta name="description" content="LUMANE. Boutique de moda femenina en México. Colección de temporada, sastrería y piezas de autor.">
+<link rel="icon" type="image/png" href="icon%20lumane.png">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- ===== TIPOGRAFÍA · VARIANTE F: Instrument Serif (display) + Figtree (texto) ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "editorial-ink": "#0A0A0A",
+          "paper-bright": "#FFFFFF",
+          "surface": "#F9F9F9",
+          "vellum-neutral": "#F2F2F2",
+          "surface-container": "#EEEEEE",
+          "surface-variant": "#E2E2E2",
+          "primary": "#000000",
+          "on-primary": "#FFFFFF",
+          "tertiary": "#000000",
+          "on-tertiary": "#FFFFFF",
+          "secondary": "#5D5F5F",
+          "text-muted": "#6B6B68",
+          "outline": "#7E7576",
+          "outline-variant": "#CFC4C5",
+          "on-primary-container": "#848484",
+          "on-primary-fixed-variant": "#474747",
+          "accent-red": "#000000"
+        },
+        borderRadius: { "DEFAULT": "0", "lg": "0", "xl": "0", "full": "9999px" },
+        spacing: {
+          "margin-edge": "4vw",
+          "col-gap": "32px",
+          "header-h": "108px",
+          "section-v-sm": "48px",
+          "section-v-md": "80px",
+          "section-v-lg": "128px"
+        },
+        /* ===== TIPOGRAFÍA · VARIANTE F =====
+           Display / titulares .......... "Instrument Serif"
+           Texto, navegación y etiquetas  "Figtree"
+           Para generar otra variante basta con cambiar los valores de este
+           bloque y el <link> de Google Fonts de arriba. Nada más. */
+        fontFamily: {
+          "display-xl":        ["Instrument Serif", "Georgia", "serif"],
+          "display-xl-mobile": ["Instrument Serif", "Georgia", "serif"],
+          "headline-lg":       ["Instrument Serif", "Georgia", "serif"],
+          "headline-lg-mobile":["Instrument Serif", "Georgia", "serif"],
+          "headline-md":       ["Instrument Serif", "Georgia", "serif"],
+          "headline-sm":       ["Instrument Serif", "Georgia", "serif"],
+          "quote":             ["Instrument Serif", "Georgia", "serif"],
+          "body-lg":           ["Figtree", "Helvetica Neue", "sans-serif"],
+          "body-md":           ["Figtree", "Helvetica Neue", "sans-serif"],
+          "nav-link":          ["Figtree", "Helvetica Neue", "sans-serif"],
+          "label-upper":       ["Figtree", "Helvetica Neue", "sans-serif"],
+          "price":             ["Figtree", "Helvetica Neue", "sans-serif"]
+        },
+        fontSize: {
+          "display-xl":        ["112px", { lineHeight: "0.9",  letterSpacing: "-0.035em", fontWeight: "400" }],
+          "display-xl-mobile": ["46px",  { lineHeight: "0.98", letterSpacing: "-0.02em",  fontWeight: "400" }],
+          "headline-lg":       ["56px",  { lineHeight: "1.06", letterSpacing: "-0.02em",  fontWeight: "400" }],
+          "headline-lg-mobile":["32px",  { lineHeight: "1.15", letterSpacing: "-0.01em",  fontWeight: "400" }],
+          "headline-md":       ["28px",  { lineHeight: "1.2",  fontWeight: "400" }],
+          "headline-sm":       ["20px",  { lineHeight: "1.35", fontWeight: "400" }],
+          "quote":             ["22px",  { lineHeight: "1.45", fontWeight: "400" }],
+          "body-lg":           ["19px",  { lineHeight: "1.6",  fontWeight: "400" }],
+          "body-md":           ["16px",  { lineHeight: "1.65", fontWeight: "400" }],
+          "nav-link":          ["13px",  { lineHeight: "1",    letterSpacing: "0.09em",   fontWeight: "500" }],
+          "label-upper":       ["11px",  { lineHeight: "16px", letterSpacing: "0.16em",   fontWeight: "700" }],
+          "price":             ["15px",  { lineHeight: "1",    letterSpacing: "0.02em",   fontWeight: "500" }]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  ::selection { background:#0A0A0A; color:#fff; }
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; }
+  .material-symbols-outlined.fill { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+
+  /* Textura de grano fotográfico */
+  .noise-bg {
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat:repeat; opacity:.035; pointer-events:none;
+  }
+
+  /* Navegación principal — subrayado */
+  .nav-item { position:relative; }
+  .nav-item::after {
+    content:""; position:absolute; left:0; right:0; bottom:-7px; height:1px;
+    background:#000000; transform:scaleX(0); transform-origin:left;
+    transition:transform .3s cubic-bezier(.2,.7,.2,1);
+  }
+  .nav-item:hover::after, .nav-item[aria-current="page"]::after { transform:scaleX(1); }
+
+  /* ===== TARJETA DE PRODUCTO =====
+     La foto nace en blanco y negro; al pasar el cursor gana color
+     y, en el mismo instante, aparecen el nombre y el precio. */
+  .p-frame { position:relative; overflow:hidden; background:#0A0A0A; }
+  .p-media {
+    width:100%; height:100%; object-fit:cover;
+    filter:grayscale(1) contrast(1.04);
+    transition:filter .7s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1);
+  }
+  .p-caption {
+    position:absolute; left:0; right:0; bottom:0;
+    background:rgba(10,10,10,.92); color:#fff; backdrop-filter:blur(6px);
+  }
+  .p-rule {
+    position:absolute; top:0; left:0; right:0; height:2px; background:#ffffff;
+    transform-origin:left;
+  }
+  .p-card:focus-visible { outline:2px solid #000000; outline-offset:4px; }
+
+  /* Dispositivos táctiles: sin cursor no hay hover.
+     El nombre y el precio se muestran siempre, y la fotografía
+     toma color al presionar la tarjeta. */
+  @media (hover:none) {
+    .p-media { filter:none; }
+    html.js .p-media { filter:grayscale(1) contrast(1.04); }
+    html.js .p-card.is-pressed .p-media { filter:none; }
+    .p-caption { opacity:1; transform:none; }
+    .p-rule { transform:scaleX(1); }
+  }
+
+  /* Escritorio: color + datos revelados juntos */
+  @media (hover:hover) {
+    .p-caption {
+      opacity:0; transform:translateY(16px);
+      transition:opacity .45s ease, transform .45s cubic-bezier(.2,.7,.2,1);
+    }
+    .p-rule { transform:scaleX(0); transition:transform .55s cubic-bezier(.2,.7,.2,1) .1s; }
+    .p-card:hover .p-media, .p-card:focus-visible .p-media { filter:none; transform:scale(1.04); }
+    .p-card:hover .p-caption, .p-card:focus-visible .p-caption { opacity:1; transform:translateY(0); }
+    .p-card:hover .p-rule, .p-card:focus-visible .p-rule { transform:scaleX(1); }
+  }
+
+  /* Mosaicos de categoría y galería */
+  .tile-media { transition:transform .8s cubic-bezier(.2,.7,.2,1); }
+  .tile:hover .tile-media, .tile:focus-visible .tile-media { transform:scale(1.06); }
+  .tile:focus-visible { outline:2px solid #000000; outline-offset:4px; }
+
+  /* Portada: la fotografía entra a color con un ligero acercamiento */
+  .hero-media { transform:scale(1.06); animation:heroReveal 1.9s cubic-bezier(.2,.7,.2,1) .2s forwards; }
+  @keyframes heroReveal { to { transform:scale(1); } }
+  @media (prefers-reduced-motion:reduce) {
+    .hero-media { animation:none; transform:none; }
+    .p-media, .tile-media, .p-caption { transition:none; }
+  }
+</style>
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="bg-surface text-primary antialiased">
+<div class="fixed inset-0 z-[100] noise-bg mix-blend-multiply"></div>
+
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="sticky top-0 z-50 w-full bg-paper-bright border-b border-primary">
+  <div class="grid grid-cols-[1fr_auto_1fr] items-center h-16 px-5 sm:px-margin-edge">
+    <a class="invisible sm:visible justify-self-start font-label-upper text-[10px] uppercase tracking-[0.16em] text-secondary hover:text-accent-red transition-colors" href="cuenta.html">Hola, Marina</a>
+    <a class="justify-self-center flex items-center" href="index.html" aria-label="LUMANE, ir al inicio">
+      <img alt="LUMANE" class="h-7 md:h-9 w-auto object-contain" src="Lumane_Logotipo-01-convertido-de-webp.png">
+    </a>
+    <div class="justify-self-end flex items-center gap-4 md:gap-6 text-primary">
+      <a aria-label="Buscar" class="hover:text-accent-red transition-colors" href="buscar.html"><span class="material-symbols-outlined text-[22px]">search</span></a>
+      <a aria-label="Mi cuenta" class="hidden sm:block hover:text-accent-red transition-colors" href="cuenta.html"><span class="material-symbols-outlined text-[22px]">person</span></a>
+      <a aria-label="Bolsa de compras, 2 artículos" class="relative hover:text-accent-red transition-colors" href="pago.html">
+        <span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+        <span class="absolute -top-1.5 -right-2 bg-accent-red text-on-primary text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">2</span>
+      </a>
+    </div>
+  </div>
+  <nav aria-label="Categorías" class="border-t border-surface-variant">
+    <div class="flex items-center justify-start md:justify-center gap-7 md:gap-10 h-11 px-5 sm:px-margin-edge overflow-x-auto no-scrollbar">
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Vestidos</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Sets</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Pantalones</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Suéters / cardigans</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Abrigos</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Tops / bodies</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Camisas</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Shorts y bermudas</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Bolsos</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="colecciones.html">Colecciones</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="#historia">Editorial</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-primary font-bold" href="rebajas.html">Rebajas</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <!-- ===================== PORTADA ===================== -->
+  <section class="relative w-full min-h-[84vh] md:min-h-[calc(100vh-108px)] overflow-hidden bg-editorial-ink">
+    <img alt="Modelo con vestido largo de encaje negro y top semitransparente de manga larga, sosteniendo una bolsa de compras LUMANE." class="hero-media absolute inset-0 w-full h-full object-cover object-top" src="fotos%20lumane%20rops/E62DAC96-6FF5-43B5-8816-B85E295D6BF2.webp">
+    <div class="absolute inset-0 bg-black/25 pointer-events-none"></div>
+    <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 via-black/30 to-transparent pointer-events-none"></div>
+    <div class="relative min-h-[84vh] md:min-h-[calc(100vh-108px)] flex flex-col justify-end px-5 sm:px-margin-edge pb-14 md:pb-section-v-md">
+      <p class="font-label-upper text-label-upper uppercase text-white/80 mb-5">Colección de temporada · 2026</p>
+      <h1 class="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl uppercase text-white mix-blend-difference max-w-5xl mb-7">
+        La nueva<br>silueta
+      </h1>
+      <p class="font-body-md md:font-body-lg text-body-md md:text-body-lg text-white/90 max-w-xl mb-9">
+        Formas estructuradas y texturas táctiles para el armario de todos los días. Piezas que se quedan más de una temporada.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a class="inline-block bg-paper-bright text-primary font-label-upper text-label-upper uppercase px-9 py-4 border border-paper-bright hover:bg-transparent hover:text-paper-bright transition-colors duration-200" href="catalogo.html">Ver colección</a>
+        <a class="inline-block text-paper-bright font-label-upper text-label-upper uppercase px-9 py-4 border border-paper-bright/60 hover:border-paper-bright hover:bg-paper-bright/10 transition-colors duration-200" href="producto.html">Pieza destacada</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FRANJA DE SERVICIOS ===================== -->
+  <section aria-label="Servicios LUMANE" class="bg-editorial-ink text-on-tertiary">
+    <ul class="px-5 sm:px-margin-edge py-5 grid grid-cols-2 lg:grid-cols-4 gap-y-4 gap-x-6 text-center lg:text-left">
+      <li class="flex items-center gap-3 justify-center lg:justify-start"><span class="material-symbols-outlined text-white text-[20px]">local_shipping</span><span class="font-label-upper text-label-upper uppercase">Envío express sin costo desde $10,000</span></li>
+      <li class="flex items-center gap-3 justify-center lg:justify-start"><span class="material-symbols-outlined text-white text-[20px]">credit_card</span><span class="font-label-upper text-label-upper uppercase">Meses sin intereses</span></li>
+      <li class="flex items-center gap-3 justify-center lg:justify-start"><span class="material-symbols-outlined text-white text-[20px]">autorenew</span><span class="font-label-upper text-label-upper uppercase">Cambios y devoluciones en 14 días</span></li>
+      <li class="flex items-center gap-3 justify-center lg:justify-start"><span class="material-symbols-outlined text-white text-[20px]">chat</span><span class="font-label-upper text-label-upper uppercase">Asesoría por WhatsApp</span></li>
+    </ul>
+  </section>
+
+  <!-- ===================== COMPRAR POR CATEGORÍA ===================== -->
+  <section class="px-5 sm:px-margin-edge pt-section-v-md md:pt-section-v-lg" aria-labelledby="t-categorias">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-8 border-b border-primary pb-4">
+      <div>
+        <p class="font-label-upper text-label-upper uppercase text-accent-red mb-3">01 / Comprar</p>
+        <h2 id="t-categorias" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg">Comprar por categoría</h2>
+      </div>
+      <a class="font-label-upper text-label-upper uppercase text-primary hover:text-accent-red transition-colors flex items-center gap-2" href="catalogo.html">Ver todo el catálogo <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-col-gap">
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Modelo con vestido largo de encaje negro y top semitransparente, ejemplo de la categoría Vestidos." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/E62DAC96-6FF5-43B5-8816-B85E295D6BF2.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Vestidos</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Conjunto de blazer y short en rosa pastel con botones dorados, ejemplo de la categoría Sets." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/65B7F186-2ABB-439E-9B15-29B369EDF803.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Sets</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Modelo con top acanalado sin mangas y pantalón ancho en tono crudo, ejemplo de la categoría Pantalones." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/DDD64602-84D9-4232-AA73-373E110AB4C1.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Pantalones</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Modelo con chaleco entallado de rayas en tono crema, ejemplo de la categoría Suéters y cardigans." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/6D2D5586-9F20-48CF-A516-85348B6C4C4F.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Suéters / cardigans</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Modelo con camisa oversize de lino café, ejemplo de la categoría Abrigos." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/8ABAC1F6-0173-42A7-B942-A010402AC7D7.jpg">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Abrigos</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Modelo con top de cuello alto sin mangas, ejemplo de la categoría Tops y bodies." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/D89112B8-BCD7-401F-8D7A-7963C64B3C7D.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Tops / bodies</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Modelo con camisa de estampado geométrico en blanco y negro, ejemplo de la categoría Camisas." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/6DF08EAA-88F5-4A39-A78E-66BCAA665F8E.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Camisas</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Modelo con camisa de rayas cafés y short negro, ejemplo de la categoría Shorts y bermudas." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/F789B7CD-F65D-4EFB-B03C-7E77F8917DE2.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Shorts y bermudas</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="catalogo.html">
+        <img alt="Dos bolsos de piel con tachuelas, negro y gris, sobre bases doradas en la tienda LUMANE, ejemplo de la categoría Bolsos." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/DEEB2F5C-2EA4-4C0E-8F61-DE52DFCE5E72.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Bolsos</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-[3/4]" href="#t-novedades">
+        <img alt="Modelo con conjunto de top y falda corta de lunares blanco y negro, ejemplo de las Novedades." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/IMG_1927-Mejorado-NR.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent pointer-events-none"></span>
+        <span class="absolute top-4 left-4 z-10 bg-accent-red text-on-primary font-label-upper text-[10px] uppercase px-2 py-1">Nuevo</span>
+        <span class="absolute inset-x-0 bottom-0 p-5 flex items-center justify-between">
+          <span class="font-label-upper text-label-upper uppercase text-white">Novedades</span>
+          <span class="material-symbols-outlined text-white text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_outward</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===================== NOVEDADES ===================== -->
+  <section class="px-5 sm:px-margin-edge pt-section-v-md md:pt-section-v-lg" aria-labelledby="t-novedades">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-col-gap">
+      <div class="lg:col-span-4 xl:col-span-3 flex flex-col">
+        <p class="font-label-upper text-label-upper uppercase text-accent-red mb-3">02 / Novedades</p>
+        <h2 id="t-novedades" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-6">Recién llegado</h2>
+        <p class="font-body-md text-body-md text-secondary mb-8 max-w-md">
+          Una selección corta y deliberada. Pasa el cursor sobre cada pieza —o tócala en tu teléfono— para verla en color y conocer su precio.
+        </p>
+        <a class="font-label-upper text-label-upper uppercase text-primary border-t border-primary pt-4 flex items-center justify-between hover:text-accent-red transition-colors max-w-xs" href="catalogo.html">
+          Explorar novedades <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="lg:col-span-8 xl:col-span-9 grid grid-cols-2 gap-4 md:gap-col-gap mt-10 lg:mt-0">
+        <!-- Conjunto Blazer Rosa -->
+        <div class="p-card block group" tabindex="0">
+          <div class="p-frame aspect-[3/4] border border-primary">
+            <img alt="Modelo de cuerpo completo con conjunto de blazer y short en rosa pastel con botones dorados, sobre fondo blanco de estudio." class="p-media" src="fotos%20lumane%20rops/65B7F186-2ABB-439E-9B15-29B369EDF803.webp">
+            <span class="absolute top-4 left-4 z-10 bg-accent-red text-on-primary font-label-upper text-[10px] uppercase px-2 py-1">Nuevo</span>
+            <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+              <span class="p-rule"></span>
+              <div>
+                <p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Conjunto Blazer Rosa</p>
+                <p class="hidden md:block font-body-md text-[13px] text-white/60 mt-1">Rosa pastel · botones dorados</p>
+              </div>
+              <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 9,800 MXN</span>
+            </div>
+          </div>
+        </div>
+        <!-- Conjunto Punto Crema -->
+        <div class="p-card block group md:mt-16" tabindex="0">
+          <div class="p-frame aspect-[3/4] border border-primary">
+            <img alt="Modelo con conjunto de top acanalado sin mangas y pantalón ancho en tono crudo, lentes de sol y bolso café, fotografiada en la tienda LUMANE." class="p-media" src="fotos%20lumane%20rops/DDD64602-84D9-4232-AA73-373E110AB4C1.webp">
+            <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+              <span class="p-rule"></span>
+              <div>
+                <p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Conjunto Punto Crema</p>
+                <p class="hidden md:block font-body-md text-[13px] text-white/60 mt-1">Punto crudo · pantalón ancho</p>
+              </div>
+              <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 10,500 MXN</span>
+            </div>
+          </div>
+        </div>
+        <!-- Vestido Floral Rosa -->
+        <div class="p-card block group" tabindex="0">
+          <div class="p-frame aspect-[3/4] border border-primary">
+            <img alt="Mini vestido floral rosa de manga globo, fotografiado en el interior de la tienda LUMANE." class="p-media" src="fotos%20lumane%20rops/WhatsAppImage2025-08-13at5.54.32PM.webp">
+            <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+              <span class="p-rule"></span>
+              <div>
+                <p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Vestido Floral Rosa</p>
+                <p class="hidden md:block font-body-md text-[13px] text-white/60 mt-1">Floral rosa · manga globo</p>
+              </div>
+              <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 6,900 MXN</span>
+            </div>
+          </div>
+        </div>
+        <!-- Bolso Tachuelas Piel -->
+        <div class="p-card block group md:mt-16" tabindex="0">
+          <div class="p-frame aspect-[3/4] border border-primary">
+            <img alt="Dos bolsos de piel con tachuelas, negro y gris, exhibidos sobre bases doradas en la tienda LUMANE." class="p-media" src="fotos%20lumane%20rops/DEEB2F5C-2EA4-4C0E-8F61-DE52DFCE5E72.webp">
+            <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+              <span class="p-rule"></span>
+              <div>
+                <p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Bolso Tachuelas Piel</p>
+                <p class="hidden md:block font-body-md text-[13px] text-white/60 mt-1">Piel · herrajes en tachuela</p>
+              </div>
+              <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 4,200 MXN</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== REBAJAS ===================== -->
+  <section class="px-5 sm:px-margin-edge pt-section-v-md md:pt-section-v-lg" aria-labelledby="t-rebajas">
+    <a class="group relative block w-full overflow-hidden bg-editorial-ink border border-primary min-h-[34vh] md:min-h-[42vh]" href="rebajas.html">
+      <img alt="Modelo de cuerpo completo con conjunto de blazer y short en rosa pastel con botones dorados, imagen de las Rebajas de temporada." class="tile-media absolute inset-0 w-full h-full object-cover object-top opacity-60" src="fotos%20lumane%20rops/65B7F186-2ABB-439E-9B15-29B369EDF803.webp">
+      <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none"></div>
+      <div class="relative h-full min-h-[34vh] md:min-h-[42vh] flex flex-col justify-end p-6 md:p-14">
+        <p class="font-label-upper text-label-upper uppercase text-white/80 mb-3">03 / Por tiempo limitado</p>
+        <h2 id="t-rebajas" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-white mb-4">Rebajas: hasta 40% de descuento</h2>
+        <p class="font-body-md text-body-md text-white/80 max-w-lg mb-7">Conjuntos, vestidos y bolsos en cantidades muy limitadas. Lo que se agota, no vuelve.</p>
+        <span class="inline-flex w-max items-center gap-2 bg-paper-bright text-primary font-label-upper text-label-upper uppercase px-8 py-3.5 border border-paper-bright group-hover:bg-transparent group-hover:text-paper-bright transition-colors duration-200">Ver rebajas <span class="material-symbols-outlined text-[16px]">arrow_forward</span></span>
+      </div>
+    </a>
+  </section>
+
+  <!-- ===================== COLECCIONES ===================== -->
+  <section class="px-5 sm:px-margin-edge pt-section-v-md md:pt-section-v-lg" aria-labelledby="t-colecciones">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-8 border-b border-primary pb-4">
+      <div>
+        <p class="font-label-upper text-label-upper uppercase text-accent-red mb-3">04 / Colecciones</p>
+        <h2 id="t-colecciones" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg">Curadas por temporada</h2>
+      </div>
+      <a class="font-label-upper text-label-upper uppercase text-primary hover:text-accent-red transition-colors flex items-center gap-2" href="colecciones.html">Ver todas las colecciones <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-col-gap">
+      <a class="tile group relative block overflow-hidden bg-editorial-ink border border-primary aspect-[5/4] md:aspect-[16/11]" href="colecciones.html">
+        <img alt="Mini vestido floral rosa de manga globo, imagen de la colección Primavera/Verano 2026." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/WhatsAppImage2025-08-13at5.54.32PM.webp">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></span>
+        <div class="absolute inset-x-0 bottom-0 p-6 md:p-8 text-on-tertiary">
+          <p class="font-label-upper text-label-upper uppercase text-white/75 mb-2">21 piezas</p>
+          <h3 class="font-headline-md text-headline-md">Primavera / Verano</h3>
+        </div>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink border border-primary aspect-[5/4] md:aspect-[16/11]" href="colecciones.html">
+        <img alt="Camisa oversize y short en lino café con botas altas color hueso, imagen de la colección Otoño/Invierno 2026." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/8ABAC1F6-0173-42A7-B942-A010402AC7D7.jpg">
+        <span class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></span>
+        <div class="absolute inset-x-0 bottom-0 p-6 md:p-8 text-on-tertiary">
+          <p class="font-label-upper text-label-upper uppercase text-white/75 mb-2">17 piezas</p>
+          <h3 class="font-headline-md text-headline-md">Otoño / Invierno</h3>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===================== NUESTRA HISTORIA ===================== -->
+  <section id="historia" class="mt-section-v-md md:mt-section-v-lg bg-editorial-ink text-on-tertiary" aria-labelledby="t-historia">
+    <div class="px-5 sm:px-margin-edge py-section-v-md md:py-section-v-lg grid grid-cols-1 lg:grid-cols-12 gap-col-gap items-center">
+      <div class="lg:col-span-5 order-2 lg:order-1 relative">
+        <img alt="Modelo con conjunto de top y falda corta a juego, estampado de lunares blanco y negro, sobre fondo blanco de estudio." class="w-full h-[52vh] lg:h-[70vh] object-cover object-top grayscale border border-on-primary-fixed-variant" src="fotos%20lumane%20rops/IMG_1927-Mejorado-NR.webp">
+        <span class="absolute top-4 right-4 bg-editorial-ink border border-on-tertiary px-3 py-1.5 font-label-upper text-[10px] uppercase">Edición limitada</span>
+      </div>
+      <div class="lg:col-span-6 lg:col-start-7 order-1 lg:order-2 mb-10 lg:mb-0">
+        <p class="font-label-upper text-label-upper uppercase text-white mb-3">05 / Nuestra casa</p>
+        <h2 id="t-historia" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-7 leading-tight">
+          Hecho para durar<br>más de una temporada.
+        </h2>
+        <div class="space-y-5 max-w-xl font-body-md text-body-md text-white/70">
+          <p>LUMANE nació de una idea sencilla: que una mujer pueda vestirse bien sin pensarlo demasiado. Elegimos cada pieza con cuidado, en series cortas, para que cada compra se sienta especial.</p>
+          <p>Cada temporada partimos de la misma pregunta —¿esta pieza seguirá sirviendo dentro de tres años?— y sólo producimos lo que responde que sí. Menos prendas, mejor hechas.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-12 pt-8 border-t border-on-primary-fixed-variant">
+          <div>
+            <p class="font-headline-md text-headline-md text-white mb-2">01</p>
+            <h3 class="font-headline-sm text-headline-sm mb-2">Curaduría cuidadosa</h3>
+            <p class="font-body-md text-[14px] text-white/60">Cada pieza pasa por nuestras manos antes de llegar a la tienda: la probamos y la elegimos.</p>
+          </div>
+          <div>
+            <p class="font-headline-md text-headline-md text-white mb-2">02</p>
+            <h3 class="font-headline-sm text-headline-sm mb-2">Tejidos de origen</h3>
+            <p class="font-body-md text-[14px] text-white/60">Algodones, linos y puntos elegidos por su caída y su resistencia.</p>
+          </div>
+          <div>
+            <p class="font-headline-md text-headline-md text-white mb-2">03</p>
+            <h3 class="font-headline-sm text-headline-sm mb-2">Series limitadas</h3>
+            <p class="font-body-md text-[14px] text-white/60">Cantidades pequeñas, para que no te encuentres tu look repetido en cada esquina.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CLIENTAS ===================== -->
+  <section class="px-5 sm:px-margin-edge py-section-v-md md:py-section-v-lg" aria-labelledby="t-clientas">
+    <div class="border-b border-primary pb-4 mb-10">
+      <p class="font-label-upper text-label-upper uppercase text-accent-red mb-3">06 / Clientas</p>
+      <h2 id="t-clientas" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg">Lo que nos cuentan</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-col-gap">
+      <figure class="border border-primary p-7 md:p-9 flex flex-col justify-between bg-paper-bright">
+        <div>
+          <div class="flex gap-0.5 text-accent-red mb-5" role="img" aria-label="Cinco de cinco estrellas">
+            <span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span>
+          </div>
+          <blockquote class="font-quote text-quote leading-snug mb-6">“Compré el conjunto de blazer para una boda y terminé usándolo en la oficina toda la temporada. La caída es perfecta.”</blockquote>
+        </div>
+        <figcaption class="font-label-upper text-label-upper uppercase text-secondary">Mariana R. · Guadalajara</figcaption>
+      </figure>
+      <figure class="border border-primary p-7 md:p-9 flex flex-col justify-between bg-paper-bright">
+        <div>
+          <div class="flex gap-0.5 text-accent-red mb-5" role="img" aria-label="Cinco de cinco estrellas">
+            <span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span>
+          </div>
+          <blockquote class="font-quote text-quote leading-snug mb-6">“Me atendieron por WhatsApp para elegir la talla y acertaron. Llegó en dos días y el empaque es precioso.”</blockquote>
+        </div>
+        <figcaption class="font-label-upper text-label-upper uppercase text-secondary">Ana Sofía L. · Ciudad de México</figcaption>
+      </figure>
+      <figure class="border border-primary p-7 md:p-9 flex flex-col justify-between bg-paper-bright">
+        <div>
+          <div class="flex gap-0.5 text-accent-red mb-5" role="img" aria-label="Cinco de cinco estrellas">
+            <span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span>
+          </div>
+          <blockquote class="font-quote text-quote leading-snug mb-6">“Llevo tres piezas de LUMANE y ninguna se ha deformado con los lavados. Eso ya no se encuentra fácil.”</blockquote>
+        </div>
+        <figcaption class="font-label-upper text-label-upper uppercase text-secondary">Regina M. · Monterrey</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== GALERÍA ===================== -->
+  <section class="px-5 sm:px-margin-edge pb-section-v-md md:pb-section-v-lg" aria-labelledby="t-galeria">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-8 border-b border-primary pb-4">
+      <div>
+        <p class="font-label-upper text-label-upper uppercase text-accent-red mb-3">07 / Comunidad</p>
+        <h2 id="t-galeria" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg">@lumane.mx</h2>
+      </div>
+      <a class="font-label-upper text-label-upper uppercase text-primary hover:text-accent-red transition-colors flex items-center gap-2" href="#">Seguirnos <span class="material-symbols-outlined text-[16px]">arrow_outward</span></a>
+    </div>
+    <div class="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-square" href="catalogo.html">
+        <img alt="Conjunto de blazer y short en rosa pastel con botones dorados." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/65B7F186-2ABB-439E-9B15-29B369EDF803.webp">
+        <span class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span class="material-symbols-outlined text-white">favorite</span></span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-square" href="catalogo.html">
+        <img alt="Top acanalado sin mangas y pantalón ancho en tono crudo, con lentes de sol y bolso café." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/DDD64602-84D9-4232-AA73-373E110AB4C1.webp">
+        <span class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span class="material-symbols-outlined text-white">favorite</span></span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-square" href="catalogo.html">
+        <img alt="Conjunto de top y falda corta con estampado de lunares blanco y negro." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/IMG_1927-Mejorado-NR.webp">
+        <span class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span class="material-symbols-outlined text-white">favorite</span></span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-square" href="catalogo.html">
+        <img alt="Camisa oversize y short en lino café con botas altas color hueso y bolso tejido." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/8ABAC1F6-0173-42A7-B942-A010402AC7D7.jpg">
+        <span class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span class="material-symbols-outlined text-white">favorite</span></span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-square" href="catalogo.html">
+        <img alt="Top de cuello alto sin mangas y bermuda de raya blanca, con bolso negro en la mano." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/D89112B8-BCD7-401F-8D7A-7963C64B3C7D.webp">
+        <span class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span class="material-symbols-outlined text-white">favorite</span></span>
+      </a>
+      <a class="tile group relative block overflow-hidden bg-editorial-ink aspect-square" href="catalogo.html">
+        <img alt="Conjunto de camisa y pantalón ancho en negro con estampado geométrico de líneas blancas." class="tile-media w-full h-full object-cover" src="fotos%20lumane%20rops/6DF08EAA-88F5-4A39-A78E-66BCAA665F8E.webp">
+        <span class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span class="material-symbols-outlined text-white">favorite</span></span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== BOLETÍN ===================== -->
+<section class="bg-editorial-ink text-on-tertiary border-t border-on-primary-fixed-variant" aria-labelledby="t-boletin">
+  <div class="px-5 sm:px-margin-edge py-section-v-md grid grid-cols-1 lg:grid-cols-12 gap-col-gap items-end">
+    <div class="lg:col-span-6">
+      <p class="font-label-upper text-label-upper uppercase text-white mb-3">Boletín</p>
+      <h2 id="t-boletin" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4">Antes que nadie.</h2>
+      <p class="font-body-md text-body-md text-white/65 max-w-lg">Acceso anticipado a cada colección, invitaciones a nuestros eventos privados y una selección editorial al mes. Nada más.</p>
+    </div>
+    <form class="lg:col-span-6 lg:col-start-7 mt-8 lg:mt-0" onsubmit="event.preventDefault();">
+      <div class="flex items-center border-b border-on-primary-fixed-variant focus-within:border-white transition-colors pb-3">
+        <label class="sr-only" for="boletin-email">Correo electrónico</label>
+        <input class="flex-grow bg-transparent border-none focus:ring-0 p-0 font-body-md text-body-md text-white placeholder:text-white/40" id="boletin-email" placeholder="tu@correo.com" required type="email">
+        <button class="font-label-upper text-label-upper uppercase text-white hover:text-white/60 transition-colors whitespace-nowrap ml-4" type="submit">Suscribirme</button>
+      </div>
+      <p class="font-body-md text-[13px] text-white/40 mt-4">Al suscribirte aceptas recibir correos de LUMANE. Puedes darte de baja cuando quieras.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ===================== PIE ===================== -->
+<footer class="bg-editorial-ink text-on-tertiary border-t border-on-primary-fixed-variant">
+  <div class="px-5 sm:px-margin-edge py-section-v-md grid grid-cols-2 lg:grid-cols-12 gap-x-col-gap gap-y-12">
+    <div class="col-span-2 lg:col-span-4">
+      <a class="inline-block mb-6" href="index.html"><img alt="LUMANE" class="h-8 w-auto object-contain brightness-0 invert" src="Lumane_Logotipo-01-convertido-de-webp.png"></a>
+      <p class="font-body-md text-body-md text-white/60 max-w-xs mb-6">Boutique de moda femenina. Piezas de autor, en series cortas.</p>
+      <div class="flex gap-5 text-white/60">
+        <a aria-label="Instagram de LUMANE" class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">photo_camera</span></a>
+        <a aria-label="Facebook de LUMANE" class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">thumb_up</span></a>
+        <a aria-label="WhatsApp de LUMANE" class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">chat</span></a>
+      </div>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">Tienda</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Vestidos</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Sets</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Pantalones</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Suéters / cardigans</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Abrigos</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Tops / bodies</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Camisas</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Shorts y bermudas</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Bolsos</a></li>
+        <li><a class="hover:text-white transition-colors" href="rebajas.html">Rebajas</a></li>
+        <li><a class="hover:text-white transition-colors" href="colecciones.html">Colecciones</a></li>
+      </ul>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">Ayuda</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li><a class="hover:text-white transition-colors" href="cuenta.html">Mi cuenta</a></li>
+        <li><a class="hover:text-white transition-colors" href="buscar.html">Buscar</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Contacto</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Envíos y devoluciones</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Guía de tallas</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Preguntas frecuentes</a></li>
+      </ul>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">La casa</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li><a class="hover:text-white transition-colors" href="#historia">Nuestra historia</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Sostenibilidad</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Puntos de venta</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Trabaja con nosotros</a></li>
+      </ul>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">Contacto</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li>hola@lumane.mx</li>
+        <li>WhatsApp 33 0000 0000</li>
+        <li>Lun a sáb · 10:00 – 19:00</li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/15 px-5 sm:px-margin-edge py-6 flex flex-col md:flex-row items-center justify-between gap-3">
+    <p class="font-label-upper text-[10px] uppercase tracking-[0.16em] text-white/50">© 2026 LUMANE. Todos los derechos reservados.</p>
+    <div class="flex gap-6 font-label-upper text-[10px] uppercase tracking-[0.16em] text-white/50">
+      <a class="hover:text-white transition-colors" href="#">Privacidad</a>
+      <a class="hover:text-white transition-colors" href="#">Términos</a>
+      <a class="hover:text-white transition-colors" href="#">Cookies</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* En pantallas táctiles no hay hover: la fotografía toma color al presionar la tarjeta. */
+  (function () {
+    var cards = [].slice.call(document.querySelectorAll('.p-card'));
+    if (!cards.length) { return; }
+    var evt = window.PointerEvent ? 'pointerdown' : 'touchstart';
+    var active = null;
+    var clear = function () {
+      if (active) { active.classList.remove('is-pressed'); active = null; }
+    };
+    var press = function (e) {
+      if (e.pointerType === 'mouse') { return; }
+      var card = e.currentTarget;
+      if (active === card) { clear(); return; }
+      clear();
+      active = card;
+      card.classList.add('is-pressed');
+    };
+    cards.forEach(function (c) { c.addEventListener(evt, press, { passive: true }); });
+    /* Al presionar fuera, la fotografía vuelve al blanco y negro. */
+    document.addEventListener(evt, function (e) {
+      if (active && !active.contains(e.target)) { clear(); }
+    }, { passive: true });
+  })();
+</script>
+</body>
+</html>

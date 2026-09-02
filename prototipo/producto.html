@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUMANE — Conjunto Estructurado Ônix</title>
+<meta name="description" content="Conjunto Estructurado Ônix de LUMANE. Camisa oversize y pantalón de pierna ancha en negro con estampado geométrico.">
+<link rel="icon" type="image/png" href="icon%20lumane.png">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- ===== TIPOGRAFÍA · VARIANTE F: Instrument Serif (display) + Figtree (texto) ===== -->
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "editorial-ink": "#0A0A0A",
+          "paper-bright": "#FFFFFF",
+          "surface": "#F9F9F9",
+          "vellum-neutral": "#F2F2F2",
+          "surface-container": "#EEEEEE",
+          "surface-variant": "#E2E2E2",
+          "primary": "#000000",
+          "on-primary": "#FFFFFF",
+          "tertiary": "#000000",
+          "on-tertiary": "#FFFFFF",
+          "secondary": "#5D5F5F",
+          "text-muted": "#6B6B68",
+          "outline": "#7E7576",
+          "outline-variant": "#CFC4C5",
+          "on-primary-container": "#848484",
+          "on-primary-fixed-variant": "#474747",
+          "accent-red": "#000000"
+        },
+        borderRadius: { "DEFAULT": "0", "lg": "0", "xl": "0", "full": "9999px" },
+        spacing: {
+          "margin-edge": "4vw",
+          "col-gap": "32px",
+          "header-h": "108px",
+          "section-v-sm": "48px",
+          "section-v-md": "80px",
+          "section-v-lg": "128px"
+        },
+        /* ===== TIPOGRAFÍA · VARIANTE F =====
+           Display / titulares .......... "Instrument Serif"
+           Texto, navegación y etiquetas  "Figtree"
+           Para generar otra variante basta con cambiar los valores de este
+           bloque y el <link> de Google Fonts de arriba. Nada más. */
+        fontFamily: {
+          "display-xl":        ["Instrument Serif", "Georgia", "serif"],
+          "display-xl-mobile": ["Instrument Serif", "Georgia", "serif"],
+          "headline-lg":       ["Instrument Serif", "Georgia", "serif"],
+          "headline-lg-mobile":["Instrument Serif", "Georgia", "serif"],
+          "headline-md":       ["Instrument Serif", "Georgia", "serif"],
+          "headline-sm":       ["Instrument Serif", "Georgia", "serif"],
+          "quote":             ["Instrument Serif", "Georgia", "serif"],
+          "body-lg":           ["Figtree", "Helvetica Neue", "sans-serif"],
+          "body-md":           ["Figtree", "Helvetica Neue", "sans-serif"],
+          "nav-link":          ["Figtree", "Helvetica Neue", "sans-serif"],
+          "label-upper":       ["Figtree", "Helvetica Neue", "sans-serif"],
+          "price":             ["Figtree", "Helvetica Neue", "sans-serif"]
+        },
+        fontSize: {
+          "display-xl":        ["112px", { lineHeight: "0.9",  letterSpacing: "-0.035em", fontWeight: "400" }],
+          "display-xl-mobile": ["46px",  { lineHeight: "0.98", letterSpacing: "-0.02em",  fontWeight: "400" }],
+          "headline-lg":       ["56px",  { lineHeight: "1.06", letterSpacing: "-0.02em",  fontWeight: "400" }],
+          "headline-lg-mobile":["32px",  { lineHeight: "1.15", letterSpacing: "-0.01em",  fontWeight: "400" }],
+          "headline-md":       ["28px",  { lineHeight: "1.2",  fontWeight: "400" }],
+          "headline-sm":       ["20px",  { lineHeight: "1.35", fontWeight: "400" }],
+          "quote":             ["22px",  { lineHeight: "1.45", fontWeight: "400" }],
+          "body-lg":           ["19px",  { lineHeight: "1.6",  fontWeight: "400" }],
+          "body-md":           ["16px",  { lineHeight: "1.65", fontWeight: "400" }],
+          "nav-link":          ["13px",  { lineHeight: "1",    letterSpacing: "0.09em",   fontWeight: "500" }],
+          "label-upper":       ["11px",  { lineHeight: "16px", letterSpacing: "0.16em",   fontWeight: "700" }],
+          "price":             ["15px",  { lineHeight: "1",    letterSpacing: "0.02em",   fontWeight: "500" }]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  ::selection { background:#0A0A0A; color:#fff; }
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; }
+  .material-symbols-outlined.fill { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+
+  .noise-bg {
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat:repeat; opacity:.035; pointer-events:none;
+  }
+
+  .nav-item { position:relative; }
+  .nav-item::after {
+    content:""; position:absolute; left:0; right:0; bottom:-7px; height:1px;
+    background:#000000; transform:scaleX(0); transform-origin:left;
+    transition:transform .3s cubic-bezier(.2,.7,.2,1);
+  }
+  .nav-item:hover::after, .nav-item[aria-current="page"]::after { transform:scaleX(1); }
+
+  /* ===== TARJETA DE PRODUCTO ===== */
+  .p-frame { position:relative; overflow:hidden; background:#0A0A0A; }
+  .p-media {
+    width:100%; height:100%; object-fit:cover;
+    filter:grayscale(1) contrast(1.04);
+    transition:filter .7s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1);
+  }
+  .p-caption {
+    position:absolute; left:0; right:0; bottom:0;
+    background:rgba(10,10,10,.92); color:#fff; backdrop-filter:blur(6px);
+  }
+  .p-rule { position:absolute; top:0; left:0; right:0; height:2px; background:#ffffff; transform-origin:left; }
+  .p-card:focus-visible { outline:2px solid #000000; outline-offset:4px; }
+
+  @media (hover:none) {
+    .p-media { filter:none; }
+    html.js .p-media { filter:grayscale(1) contrast(1.04); }
+    html.js .p-card.is-pressed .p-media { filter:none; }
+    .p-caption { opacity:1; transform:none; }
+    .p-rule { transform:scaleX(1); }
+  }
+  @media (hover:hover) {
+    .p-caption {
+      opacity:0; transform:translateY(16px);
+      transition:opacity .45s ease, transform .45s cubic-bezier(.2,.7,.2,1);
+    }
+    .p-rule { transform:scaleX(0); transition:transform .55s cubic-bezier(.2,.7,.2,1) .1s; }
+    .p-card:hover .p-media, .p-card:focus-visible .p-media { filter:none; transform:scale(1.04); }
+    .p-card:hover .p-caption, .p-card:focus-visible .p-caption { opacity:1; transform:translateY(0); }
+    .p-card:hover .p-rule, .p-card:focus-visible .p-rule { transform:scaleX(1); }
+  }
+
+  /* Fotografía del producto: siempre a color, con una entrada suave */
+  .hero-media { transform:scale(1.04); animation:heroReveal 1.7s cubic-bezier(.2,.7,.2,1) .15s forwards; }
+  @keyframes heroReveal { to { transform:scale(1); } }
+
+  /* Acordeones */
+  .accordion-content { max-height:0; overflow:hidden; transition:max-height .35s ease-out; }
+  .accordion-item[open] .accordion-content { max-height:600px; transition:max-height .5s ease-in; }
+  .accordion-item > summary { list-style:none; cursor:pointer; }
+  .accordion-item > summary::-webkit-details-marker { display:none; }
+  .accordion-item[open] .accordion-icon { transform:rotate(45deg); }
+
+  @media (prefers-reduced-motion:reduce) {
+    .hero-media { animation:none; transform:none; }
+    .p-media, .p-caption { transition:none; }
+  }
+</style>
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="bg-surface text-primary antialiased">
+<div class="fixed inset-0 z-[100] noise-bg mix-blend-multiply"></div>
+
+<!-- ===================== ENCABEZADO ===================== -->
+<header class="sticky top-0 z-50 w-full bg-paper-bright border-b border-primary">
+  <div class="grid grid-cols-[1fr_auto_1fr] items-center h-16 px-5 sm:px-margin-edge">
+    <a class="invisible sm:visible justify-self-start font-label-upper text-[10px] uppercase tracking-[0.16em] text-secondary hover:text-accent-red transition-colors" href="cuenta.html">Hola, Marina</a>
+    <a class="justify-self-center flex items-center" href="index.html" aria-label="LUMANE, ir al inicio">
+      <img alt="LUMANE" class="h-7 md:h-9 w-auto object-contain" src="Lumane_Logotipo-01-convertido-de-webp.png">
+    </a>
+    <div class="justify-self-end flex items-center gap-4 md:gap-6 text-primary">
+      <a aria-label="Buscar" class="hover:text-accent-red transition-colors" href="buscar.html"><span class="material-symbols-outlined text-[22px]">search</span></a>
+      <a aria-label="Mi cuenta" class="hidden sm:block hover:text-accent-red transition-colors" href="cuenta.html"><span class="material-symbols-outlined text-[22px]">person</span></a>
+      <a aria-label="Bolsa de compras, 2 artículos" class="relative hover:text-accent-red transition-colors" href="pago.html">
+        <span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+        <span class="absolute -top-1.5 -right-2 bg-accent-red text-on-primary text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">2</span>
+      </a>
+    </div>
+  </div>
+  <nav aria-label="Categorías" class="border-t border-surface-variant">
+    <div class="flex items-center justify-start md:justify-center gap-7 md:gap-10 h-11 px-5 sm:px-margin-edge overflow-x-auto no-scrollbar">
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Vestidos</a>
+      <a aria-current="page" class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-primary transition-colors" href="catalogo.html">Sets</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Pantalones</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Suéters / cardigans</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Abrigos</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Tops / bodies</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Camisas</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Shorts y bermudas</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="catalogo.html">Bolsos</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="colecciones.html">Colecciones</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-secondary hover:text-primary transition-colors" href="index.html#historia">Editorial</a>
+      <a class="nav-item font-nav-link text-nav-link uppercase whitespace-nowrap text-primary font-bold" href="rebajas.html">Rebajas</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <!-- Migas de pan -->
+  <nav aria-label="Ruta de navegación" class="px-5 sm:px-margin-edge pt-6 pb-5 flex flex-wrap items-center justify-between gap-3">
+    <ol class="flex items-center gap-2 font-label-upper text-[10px] uppercase tracking-[0.16em] text-secondary">
+      <li><a class="hover:text-accent-red transition-colors" href="index.html">Inicio</a></li>
+      <li aria-hidden="true" class="text-outline-variant">/</li>
+      <li><a class="hover:text-accent-red transition-colors" href="catalogo.html">Catálogo</a></li>
+      <li aria-hidden="true" class="text-outline-variant">/</li>
+      <li><span aria-current="page" class="text-primary">Conjunto Estructurado Ônix</span></li>
+    </ol>
+    <a class="font-label-upper text-[10px] uppercase tracking-[0.16em] text-secondary hover:text-accent-red transition-colors flex items-center gap-1" href="catalogo.html"><span class="material-symbols-outlined text-[14px]">arrow_back</span> Volver al catálogo</a>
+  </nav>
+
+  <!-- ============ FICHA DE PRODUCTO ============ -->
+  <section class="px-5 sm:px-margin-edge pb-section-v-md grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-col-gap items-start">
+
+    <!-- Galería -->
+    <div class="lg:col-span-7 flex flex-col gap-4">
+      <figure class="relative overflow-hidden bg-editorial-ink border border-primary">
+        <img alt="Conjunto de camisa y pantalón ancho en negro con estampado geométrico de líneas blancas, modelo sentada en silla de director." class="hero-media w-full h-auto object-cover" src="fotos%20lumane%20rops/6DF08EAA-88F5-4A39-A78E-66BCAA665F8E.webp">
+        <figcaption class="absolute top-4 left-4 bg-paper-bright border border-primary px-3 py-1.5 font-label-upper text-[10px] uppercase">Look completo</figcaption>
+      </figure>
+      <div class="grid grid-cols-2 gap-4">
+        <figure class="relative overflow-hidden bg-editorial-ink border border-primary aspect-[4/5]">
+          <img alt="Detalle del estampado geométrico de líneas blancas sobre negro del Conjunto Estructurado Ônix." class="w-full h-full object-cover scale-[1.9] origin-[58%_30%]" src="fotos%20lumane%20rops/6DF08EAA-88F5-4A39-A78E-66BCAA665F8E.webp">
+          <figcaption class="absolute bottom-0 inset-x-0 bg-editorial-ink/90 text-on-tertiary px-4 py-2 font-label-upper text-[10px] uppercase">Detalle del estampado</figcaption>
+        </figure>
+        <figure class="relative overflow-hidden bg-editorial-ink border border-primary aspect-[4/5]">
+          <img alt="Vista de la caída del pantalón de pierna ancha del Conjunto Estructurado Ônix." class="w-full h-full object-cover scale-[1.6] origin-bottom" src="fotos%20lumane%20rops/6DF08EAA-88F5-4A39-A78E-66BCAA665F8E.webp">
+          <figcaption class="absolute bottom-0 inset-x-0 bg-editorial-ink/90 text-on-tertiary px-4 py-2 font-label-upper text-[10px] uppercase">Caída del pantalón</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <!-- Detalle -->
+    <div class="lg:col-span-5 lg:sticky lg:top-[128px]">
+      <div class="flex items-center justify-between mb-5">
+        <span class="font-label-upper text-label-upper uppercase text-accent-red">Sets · Edición de temporada</span>
+        <span class="font-label-upper text-[10px] uppercase tracking-[0.16em] text-secondary border border-outline-variant px-2 py-1">SKU LM-118-N</span>
+      </div>
+
+      <h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg leading-tight mb-4">Conjunto Estructurado Ônix</h1>
+
+      <div class="flex flex-wrap items-center gap-4 mb-6">
+        <p class="font-headline-md text-headline-md">$ 12,500 MXN</p>
+        <a class="flex items-center gap-2 group" href="#resenas">
+          <span class="flex gap-0.5 text-accent-red" aria-hidden="true">
+            <span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span>
+          </span>
+          <span class="font-body-md text-[14px] text-secondary group-hover:text-primary transition-colors underline underline-offset-4">4.8 · 37 reseñas</span>
+        </a>
+      </div>
+
+      <p class="font-body-md text-body-md text-secondary mb-8 max-w-lg">
+        Camisa oversize y pantalón de pierna ancha en negro, unidos por un estampado geométrico de líneas blancas. Silueta contundente, líneas limpias y una caída que impone presencia sin perder fluidez.
+      </p>
+
+      <!-- Color -->
+      <div class="border-t border-primary pt-6 mb-8">
+        <p class="font-label-upper text-label-upper uppercase mb-4">Color: <span class="text-secondary ml-1 normal-case tracking-normal">Ônix</span></p>
+        <div class="flex gap-3">
+          <button aria-label="Color Ônix, seleccionado" aria-pressed="true" class="w-8 h-8 rounded-full bg-black ring-1 ring-offset-2 ring-primary"></button>
+          <button aria-label="Color Crudo, agotado" class="w-8 h-8 rounded-full bg-vellum-neutral border border-outline opacity-40 cursor-not-allowed" disabled title="Agotado"></button>
+        </div>
+      </div>
+
+      <!-- Talla -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <p class="font-label-upper text-label-upper uppercase">Talla (MX)</p>
+          <button class="font-body-md text-[14px] text-secondary underline underline-offset-4 hover:text-accent-red transition-colors">Guía de tallas</button>
+        </div>
+        <div class="grid grid-cols-4 gap-2">
+          <button class="border border-primary py-3.5 font-nav-link text-nav-link hover:bg-primary hover:text-on-primary transition-colors">34</button>
+          <button class="border border-primary py-3.5 font-nav-link text-nav-link hover:bg-primary hover:text-on-primary transition-colors">36</button>
+          <button aria-pressed="true" class="border-2 border-primary bg-primary text-on-primary py-3.5 font-nav-link text-nav-link">38</button>
+          <button class="border border-outline-variant text-outline py-3.5 font-nav-link text-nav-link line-through cursor-not-allowed" disabled title="Agotado">40</button>
+        </div>
+        <p class="font-body-md text-[13px] text-text-muted mt-3">La modelo mide 1.75 m y usa talla 38.</p>
+      </div>
+
+      <!-- Cantidad + acción -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-4">
+        <div class="flex items-center border border-primary h-16 sm:h-14 w-full sm:w-32 justify-between px-4">
+          <button aria-label="Disminuir cantidad" class="hover:text-accent-red transition-colors"><span class="material-symbols-outlined text-[18px]">remove</span></button>
+          <span class="font-nav-link text-nav-link">1</span>
+          <button aria-label="Aumentar cantidad" class="hover:text-accent-red transition-colors"><span class="material-symbols-outlined text-[18px]">add</span></button>
+        </div>
+        <a class="w-full sm:flex-1 bg-primary text-on-primary border border-primary h-16 sm:h-14 flex items-center justify-center gap-2 font-label-upper text-label-upper uppercase hover:bg-paper-bright hover:text-primary transition-colors" href="pago.html">
+          Añadir a la bolsa <span class="material-symbols-outlined text-[18px]">east</span>
+        </a>
+      </div>
+      <button class="w-full border border-outline-variant h-12 flex items-center justify-center gap-2 font-label-upper text-label-upper uppercase text-secondary hover:border-primary hover:text-primary transition-colors mb-8">
+        <span class="material-symbols-outlined text-[18px]">favorite</span> Guardar en favoritos
+      </button>
+
+      <!-- Servicios -->
+      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10 font-body-md text-[14px] text-secondary">
+        <li class="flex items-center gap-3"><span class="material-symbols-outlined text-accent-red text-[18px]">local_shipping</span> Envío express sin costo</li>
+        <li class="flex items-center gap-3"><span class="material-symbols-outlined text-accent-red text-[18px]">autorenew</span> Devolución en 14 días</li>
+        <li class="flex items-center gap-3"><span class="material-symbols-outlined text-accent-red text-[18px]">storefront</span> Recoger en tienda</li>
+        <li class="flex items-center gap-3"><span class="material-symbols-outlined text-accent-red text-[18px]">chat</span> Asesoría por WhatsApp</li>
+      </ul>
+
+      <!-- Acordeones -->
+      <div class="border-t border-primary">
+        <details class="accordion-item border-b border-primary">
+          <summary class="w-full py-5 flex justify-between items-center">
+            <span class="flex items-center gap-4"><span class="font-headline-sm text-headline-sm text-secondary">01</span><span class="font-label-upper text-label-upper uppercase">Detalles y ajuste</span></span>
+            <span class="material-symbols-outlined accordion-icon transition-transform duration-300 text-[20px]">add</span>
+          </summary>
+          <div class="accordion-content">
+            <ul class="pb-6 pl-12 list-disc space-y-2 font-body-md text-body-md text-secondary marker:text-accent-red">
+              <li>Conjunto de dos piezas: camisa oversize y pantalón de pierna ancha.</li>
+              <li>Cierre de botones al frente con cuello clásico.</li>
+              <li>Estampado geométrico de líneas blancas sobre negro.</li>
+              <li>Pantalón con pretina elástica al posterior y pasadores para cinturón.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="accordion-item border-b border-primary">
+          <summary class="w-full py-5 flex justify-between items-center">
+            <span class="flex items-center gap-4"><span class="font-headline-sm text-headline-sm text-secondary">02</span><span class="font-label-upper text-label-upper uppercase">Composición y cuidado</span></span>
+            <span class="material-symbols-outlined accordion-icon transition-transform duration-300 text-[20px]">add</span>
+          </summary>
+          <div class="accordion-content">
+            <div class="pb-6 pl-12 space-y-3 font-body-md text-body-md text-secondary">
+              <p><strong class="text-primary">Exterior:</strong> 100% algodón.</p>
+              <p>Lavado a mano o ciclo delicado. Planchar a temperatura media con paño protector. No usar secadora.</p>
+            </div>
+          </div>
+        </details>
+        <details class="accordion-item border-b border-primary">
+          <summary class="w-full py-5 flex justify-between items-center">
+            <span class="flex items-center gap-4"><span class="font-headline-sm text-headline-sm text-secondary">03</span><span class="font-label-upper text-label-upper uppercase">Envíos y devoluciones</span></span>
+            <span class="material-symbols-outlined accordion-icon transition-transform duration-300 text-[20px]">add</span>
+          </summary>
+          <div class="accordion-content">
+            <div class="pb-6 pl-12 space-y-3 font-body-md text-body-md text-secondary">
+              <p>Envío express sin costo en compras superiores a $10,000 MXN. Entrega estimada de 2 a 4 días hábiles en toda la República.</p>
+              <p>Aceptamos cambios y devoluciones dentro de los 14 días posteriores a la recepción, siempre que la pieza conserve sus etiquetas originales.</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESEÑAS ============ -->
+  <section id="resenas" class="px-5 sm:px-margin-edge py-section-v-md border-t border-primary" aria-labelledby="t-resenas">
+    <div class="border-b border-primary pb-4 mb-10">
+      <p class="font-label-upper text-label-upper uppercase text-accent-red mb-3">Opiniones verificadas</p>
+      <h2 id="t-resenas" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg">Reseñas de clientas</h2>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-col-gap">
+      <!-- Resumen -->
+      <div class="lg:col-span-4">
+        <div class="border border-primary p-8 bg-paper-bright">
+          <p class="font-display-xl-mobile text-display-xl-mobile leading-none mb-3">4.8</p>
+          <div class="flex gap-0.5 text-accent-red mb-2" role="img" aria-label="4.8 de 5 estrellas">
+            <span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span><span class="material-symbols-outlined fill text-[18px]">star</span>
+          </div>
+          <p class="font-body-md text-[14px] text-secondary mb-7">Basado en 37 reseñas de compras verificadas.</p>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-center gap-3"><span class="font-price text-price w-8 text-secondary">5 ★</span><span class="flex-1 h-1.5 bg-surface-variant"><span class="block h-full bg-primary" style="width:81%"></span></span><span class="font-price text-price w-8 text-right text-secondary">30</span></li>
+            <li class="flex items-center gap-3"><span class="font-price text-price w-8 text-secondary">4 ★</span><span class="flex-1 h-1.5 bg-surface-variant"><span class="block h-full bg-primary" style="width:14%"></span></span><span class="font-price text-price w-8 text-right text-secondary">5</span></li>
+            <li class="flex items-center gap-3"><span class="font-price text-price w-8 text-secondary">3 ★</span><span class="flex-1 h-1.5 bg-surface-variant"><span class="block h-full bg-primary" style="width:3%"></span></span><span class="font-price text-price w-8 text-right text-secondary">1</span></li>
+            <li class="flex items-center gap-3"><span class="font-price text-price w-8 text-secondary">2 ★</span><span class="flex-1 h-1.5 bg-surface-variant"><span class="block h-full bg-primary" style="width:3%"></span></span><span class="font-price text-price w-8 text-right text-secondary">1</span></li>
+            <li class="flex items-center gap-3"><span class="font-price text-price w-8 text-secondary">1 ★</span><span class="flex-1 h-1.5 bg-surface-variant"><span class="block h-full bg-primary" style="width:0%"></span></span><span class="font-price text-price w-8 text-right text-secondary">0</span></li>
+          </ul>
+          <button class="w-full border border-primary py-4 font-label-upper text-label-upper uppercase hover:bg-primary hover:text-on-primary transition-colors">Escribir una reseña</button>
+        </div>
+      </div>
+
+      <!-- Reseñas -->
+      <div class="lg:col-span-8 flex flex-col divide-y divide-surface-variant">
+        <article class="pb-8">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="flex gap-0.5 text-accent-red" role="img" aria-label="Cinco de cinco estrellas">
+              <span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span>
+            </div>
+            <span class="font-label-upper text-[10px] uppercase tracking-[0.16em] text-text-muted">14 de julio, 2026</span>
+          </div>
+          <h3 class="font-headline-sm text-headline-sm mb-2">Se ve mucho mejor en persona</h3>
+          <p class="font-body-md text-body-md text-secondary mb-4 max-w-2xl">El estampado tiene un relieve que la foto no alcanza a mostrar. Pedí talla 38 y quedó exacto según la guía. Lo he usado para trabajo y para cenar, funciona para las dos cosas.</p>
+          <p class="font-label-upper text-label-upper uppercase text-secondary">Valeria C. · Talla 38 <span class="text-accent-red ml-2">Compra verificada</span></p>
+        </article>
+        <article class="py-8">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="flex gap-0.5 text-accent-red" role="img" aria-label="Cinco de cinco estrellas">
+              <span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span>
+            </div>
+            <span class="font-label-upper text-[10px] uppercase tracking-[0.16em] text-text-muted">2 de julio, 2026</span>
+          </div>
+          <h3 class="font-headline-sm text-headline-sm mb-2">La tela vale cada peso</h3>
+          <p class="font-body-md text-body-md text-secondary mb-4 max-w-2xl">Algodón grueso, bien cortado, sin hilos sueltos. Lo lavé a mano y no encogió nada. Es de esas piezas que sabes que vas a traer varios años.</p>
+          <p class="font-label-upper text-label-upper uppercase text-secondary">Daniela P. · Talla 36 <span class="text-accent-red ml-2">Compra verificada</span></p>
+        </article>
+        <article class="py-8">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="flex gap-0.5 text-accent-red" role="img" aria-label="Cuatro de cinco estrellas">
+              <span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined fill text-[16px]">star</span><span class="material-symbols-outlined text-[16px]">star</span>
+            </div>
+            <span class="font-label-upper text-[10px] uppercase tracking-[0.16em] text-text-muted">21 de junio, 2026</span>
+          </div>
+          <h3 class="font-headline-sm text-headline-sm mb-2">Amplio, mejor pedir una talla menos</h3>
+          <p class="font-body-md text-body-md text-secondary mb-4 max-w-2xl">La camisa es bastante oversize, si la quieres más entallada conviene bajar una talla. Fuera de eso, el conjunto es precioso y llegó en tres días.</p>
+          <p class="font-label-upper text-label-upper uppercase text-secondary">Renata G. · Talla 40 <span class="text-accent-red ml-2">Compra verificada</span></p>
+        </article>
+        <div class="pt-8">
+          <a class="font-label-upper text-label-upper uppercase text-primary hover:text-accent-red transition-colors flex items-center gap-2 w-max" href="#resenas">Ver las 37 reseñas <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RELACIONADOS ============ -->
+  <section class="px-5 sm:px-margin-edge py-section-v-md border-t border-primary" aria-labelledby="t-relacionados">
+    <div class="flex flex-wrap items-end justify-between gap-4 border-b border-primary pb-4 mb-10">
+      <h2 id="t-relacionados" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg">También te podría interesar</h2>
+      <a class="font-label-upper text-label-upper uppercase text-primary hover:text-accent-red transition-colors flex items-center gap-2" href="catalogo.html">Ver todo <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-col-gap gap-y-10">
+      <a class="p-card block group" href="catalogo.html">
+        <div class="p-frame aspect-[3/4] border border-primary">
+          <img alt="Modelo con conjunto de top acanalado sin mangas y pantalón ancho en tono crudo, lentes de sol y bolso café, fotografiada en la tienda LUMANE." class="p-media" src="fotos%20lumane%20rops/DDD64602-84D9-4232-AA73-373E110AB4C1.webp">
+          <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+            <span class="p-rule"></span>
+            <div><p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Conjunto Punto Crema</p></div>
+            <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 10,500 MXN</span>
+          </div>
+        </div>
+      </a>
+      <a class="p-card block group" href="catalogo.html">
+        <div class="p-frame aspect-[3/4] border border-primary">
+          <img alt="Top de cuello alto sin mangas y bermuda de raya blanca, con bolso negro en la mano." class="p-media" src="fotos%20lumane%20rops/D89112B8-BCD7-401F-8D7A-7963C64B3C7D.webp">
+          <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+            <span class="p-rule"></span>
+            <div><p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Conjunto Bermuda Blanco</p></div>
+            <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 7,900 MXN</span>
+          </div>
+        </div>
+      </a>
+      <a class="p-card block group" href="catalogo.html">
+        <div class="p-frame aspect-[3/4] border border-primary">
+          <img alt="Camisa oversize de rayas cafés con short negro, fondo de cortina beige." class="p-media" src="fotos%20lumane%20rops/F789B7CD-F65D-4EFB-B03C-7E77F8917DE2.webp">
+          <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+            <span class="p-rule"></span>
+            <div><p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Camisa Rayada Café</p></div>
+            <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 7,400 MXN</span>
+          </div>
+        </div>
+      </a>
+      <a class="p-card block group" href="catalogo.html">
+        <div class="p-frame aspect-[3/4] border border-primary">
+          <img alt="Dos bolsos de piel con tachuelas, negro y gris, exhibidos sobre bases doradas en la tienda LUMANE." class="p-media" src="fotos%20lumane%20rops/DEEB2F5C-2EA4-4C0E-8F61-DE52DFCE5E72.webp">
+          <div class="p-caption p-3 md:p-5 flex flex-col md:flex-row md:items-end md:justify-between gap-1 md:gap-3">
+            <span class="p-rule"></span>
+            <div><p class="font-label-upper text-[10px] md:text-label-upper uppercase tracking-[0.14em] leading-snug">Bolso Tachuelas Piel</p></div>
+            <span class="font-price text-[13px] md:text-price whitespace-nowrap">$ 4,200 MXN</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== BOLETÍN ===================== -->
+<section class="bg-editorial-ink text-on-tertiary border-t border-on-primary-fixed-variant" aria-labelledby="t-boletin">
+  <div class="px-5 sm:px-margin-edge py-section-v-md grid grid-cols-1 lg:grid-cols-12 gap-col-gap items-end">
+    <div class="lg:col-span-6">
+      <p class="font-label-upper text-label-upper uppercase text-white mb-3">Boletín</p>
+      <h2 id="t-boletin" class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4">Antes que nadie.</h2>
+      <p class="font-body-md text-body-md text-white/65 max-w-lg">Acceso anticipado a cada colección, invitaciones a nuestros eventos privados y una selección editorial al mes. Nada más.</p>
+    </div>
+    <form class="lg:col-span-6 lg:col-start-7 mt-8 lg:mt-0" onsubmit="event.preventDefault();">
+      <div class="flex items-center border-b border-on-primary-fixed-variant focus-within:border-white transition-colors pb-3">
+        <label class="sr-only" for="boletin-email">Correo electrónico</label>
+        <input class="flex-grow bg-transparent border-none focus:ring-0 p-0 font-body-md text-body-md text-white placeholder:text-white/40" id="boletin-email" placeholder="tu@correo.com" required type="email">
+        <button class="font-label-upper text-label-upper uppercase text-white hover:text-white/60 transition-colors whitespace-nowrap ml-4" type="submit">Suscribirme</button>
+      </div>
+      <p class="font-body-md text-[13px] text-white/40 mt-4">Al suscribirte aceptas recibir correos de LUMANE. Puedes darte de baja cuando quieras.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ===================== PIE ===================== -->
+<footer class="bg-editorial-ink text-on-tertiary border-t border-on-primary-fixed-variant">
+  <div class="px-5 sm:px-margin-edge py-section-v-md grid grid-cols-2 lg:grid-cols-12 gap-x-col-gap gap-y-12">
+    <div class="col-span-2 lg:col-span-4">
+      <a class="inline-block mb-6" href="index.html"><img alt="LUMANE" class="h-8 w-auto object-contain brightness-0 invert" src="Lumane_Logotipo-01-convertido-de-webp.png"></a>
+      <p class="font-body-md text-body-md text-white/60 max-w-xs mb-6">Boutique de moda femenina. Piezas de autor, en series cortas.</p>
+      <div class="flex gap-5 text-white/60">
+        <a aria-label="Instagram de LUMANE" class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">photo_camera</span></a>
+        <a aria-label="Facebook de LUMANE" class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">thumb_up</span></a>
+        <a aria-label="WhatsApp de LUMANE" class="hover:text-white transition-colors" href="#"><span class="material-symbols-outlined text-[20px]">chat</span></a>
+      </div>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">Tienda</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Vestidos</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Sets</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Pantalones</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Suéters / cardigans</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Abrigos</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Tops / bodies</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Camisas</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Shorts y bermudas</a></li>
+        <li><a class="hover:text-white transition-colors" href="catalogo.html">Bolsos</a></li>
+        <li><a class="hover:text-white transition-colors" href="rebajas.html">Rebajas</a></li>
+        <li><a class="hover:text-white transition-colors" href="colecciones.html">Colecciones</a></li>
+      </ul>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">Ayuda</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li><a class="hover:text-white transition-colors" href="cuenta.html">Mi cuenta</a></li>
+        <li><a class="hover:text-white transition-colors" href="buscar.html">Buscar</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Contacto</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Envíos y devoluciones</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Guía de tallas</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Preguntas frecuentes</a></li>
+      </ul>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">La casa</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li><a class="hover:text-white transition-colors" href="index.html#historia">Nuestra historia</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Sostenibilidad</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Puntos de venta</a></li>
+        <li><a class="hover:text-white transition-colors" href="#">Trabaja con nosotros</a></li>
+      </ul>
+    </div>
+    <div class="col-span-1 lg:col-span-2">
+      <h3 class="font-label-upper text-label-upper uppercase mb-5">Contacto</h3>
+      <ul class="flex flex-col gap-3 font-body-md text-body-md text-white/60">
+        <li>hola@lumane.mx</li>
+        <li>WhatsApp 33 0000 0000</li>
+        <li>Lun a sáb · 10:00 – 19:00</li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/15 px-5 sm:px-margin-edge py-6 flex flex-col md:flex-row items-center justify-between gap-3">
+    <p class="font-label-upper text-[10px] uppercase tracking-[0.16em] text-white/50">© 2026 LUMANE. Todos los derechos reservados.</p>
+    <div class="flex gap-6 font-label-upper text-[10px] uppercase tracking-[0.16em] text-white/50">
+      <a class="hover:text-white transition-colors" href="#">Privacidad</a>
+      <a class="hover:text-white transition-colors" href="#">Términos</a>
+      <a class="hover:text-white transition-colors" href="#">Cookies</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* En pantallas táctiles no hay hover: la fotografía toma color al presionar la tarjeta. */
+  (function () {
+    var cards = [].slice.call(document.querySelectorAll('.p-card'));
+    if (!cards.length) { return; }
+    var evt = window.PointerEvent ? 'pointerdown' : 'touchstart';
+    var active = null;
+    var clear = function () {
+      if (active) { active.classList.remove('is-pressed'); active = null; }
+    };
+    var press = function (e) {
+      if (e.pointerType === 'mouse') { return; }
+      var card = e.currentTarget;
+      if (active === card) { clear(); return; }
+      clear();
+      active = card;
+      card.classList.add('is-pressed');
+    };
+    cards.forEach(function (c) { c.addEventListener(evt, press, { passive: true }); });
+    /* Al presionar fuera, la fotografía vuelve al blanco y negro. */
+    document.addEventListener(evt, function (e) {
+      if (active && !active.contains(e.target)) { clear(); }
+    }, { passive: true });
+  })();
+</script>
+</body>
+</html>
