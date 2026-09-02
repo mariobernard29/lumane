@@ -52,3 +52,23 @@ delta con un `UPDATE`, donde el `CHECK` evalúa el valor real resultante.
 
 **Lección:** una prueba que pasa no demuestra que el sistema funcione; hay que
 verificar también el caso que debe TENER ÉXITO, no solo el que debe fallar.
+
+---
+
+## Segunda trampa: el error que se veía como "no hay resultados"
+
+`search_products` (migración 0023) se escribió como SECURITY INVOKER para que
+RLS filtrara lo publicado. Pero usa `private.f_unaccent`, y el esquema `private`
+tiene el USAGE revocado para `anon`. La función reventaba con
+`permission denied for schema private` en cada visita anónima.
+
+El catálogo no se veía roto: se veía **vacío**. Y lo hacía porque la consulta
+capturaba el error y devolvía una lista sin elementos sin registrar nada.
+
+Dos correcciones (migración 0024 y `lib/queries/catalog.ts`):
+
+1. La función pasa a SECURITY DEFINER y los predicados de visibilidad
+   (`status = 'active' and is_online`) se escriben explícitamente, porque un
+   DEFINER ya no puede apoyarse en RLS.
+2. El fallo se traza. "El RPC falló" y "no hay piezas que coincidan" son
+   estados distintos y no pueden verse igual en pantalla.

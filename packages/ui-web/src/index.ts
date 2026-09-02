@@ -21,6 +21,17 @@ export { ProductCard, type ProductCardProps } from './components/ProductCard.tsx
 export { Tile, type TileProps } from './components/Tile.tsx'
 export { SectionHeader, type SectionHeaderProps } from './components/SectionHeader.tsx'
 export { Breadcrumbs, type Crumb } from './components/Breadcrumbs.tsx'
+export {
+  FiltersSidebar,
+  type FiltersSidebarProps,
+  type FilterOption,
+  type ActiveChip,
+} from './components/FiltersSidebar.tsx'
+export { SortSelect, type SortSelectProps, type SortOption } from './components/SortSelect.tsx'
+export { Pagination, type PaginationProps } from './components/Pagination.tsx'
+export { EmptyState, type EmptyStateProps } from './components/EmptyState.tsx'
+export { Rating, type RatingProps } from './components/Rating.tsx'
+export { Accordion, type AccordionItem } from './components/Accordion.tsx'
 export { Hero, type HeroProps } from './components/Hero.tsx'
 export { ServicesBar, type ServiceItem } from './components/ServicesBar.tsx'
 export { Newsletter, type NewsletterProps } from './components/Newsletter.tsx'

@@ -170,7 +170,9 @@ begin
     values (
       p.name, p.slug, p.short_description, 'active', true, now(),
       (select id from public.categories where slug = p.category_slug),
-      p.name || ' · LUMANE',
+      -- Sin sufijo: la plantilla de metadatos de Next añade '· LUMANE'.
+      -- Duplicarlo aquí produce 'Vestido Encaje Negro · LUMANE · LUMANE'.
+      p.name,
       p.short_description
     )
     returning id into v_product_id;

@@ -1,5 +1,5 @@
-// Generado por `pnpm db:types` desde el esquema de Supabase. No editar a mano.
-// Regenerar tras cada migracion: pnpm db:types
+// Generado desde el esquema de Supabase. No editar a mano.
+// Regenerar tras CADA migracion, o el editor creera que las columnas nuevas no existen.
 
 export type Json =
   | string
@@ -1839,6 +1839,84 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          author_name: string
+          body: string
+          created_at: string
+          customer_id: string | null
+          id: string
+          is_published: boolean
+          order_id: string | null
+          product_id: string
+          rating: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_name: string
+          body: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          is_published?: boolean
+          order_id?: string | null
+          product_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          body?: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          is_published?: boolean
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_stats"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "product_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_alerts"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       product_tags: {
         Row: {
           product_id: string
@@ -1951,6 +2029,7 @@ export type Database = {
           brand: string | null
           created_at: string
           created_by: string | null
+          fit_note: string | null
           id: string
           is_online: boolean
           long_description: string | null
@@ -1970,6 +2049,7 @@ export type Database = {
           brand?: string | null
           created_at?: string
           created_by?: string | null
+          fit_note?: string | null
           id?: string
           is_online?: boolean
           long_description?: string | null
@@ -1989,6 +2069,7 @@ export type Database = {
           brand?: string | null
           created_at?: string
           created_by?: string | null
+          fit_note?: string | null
           id?: string
           is_online?: boolean
           long_description?: string | null
@@ -2671,6 +2752,34 @@ export type Database = {
           },
         ]
       }
+      v_product_ratings: {
+        Row: {
+          average_rating: number | null
+          five_star: number | null
+          four_star: number | null
+          one_star: number | null
+          product_id: string | null
+          reviews_count: number | null
+          three_star: number | null
+          two_star: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_alerts"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       v_stock_alerts: {
         Row: {
           alert: string | null
@@ -2706,7 +2815,7 @@ export type Database = {
     }
     Functions: {
       add_cart_line: {
-        Args: { p_quantity?: number; p_token: string; p_variant_id: string }
+        Args: { p_quantity?: number; p_token?: string; p_variant_id?: string }
         Returns: Json
       }
       add_cash_movement: {
@@ -2794,6 +2903,21 @@ export type Database = {
       }
       release_expired_reservations: { Args: never; Returns: number }
       reserve_cart_stock: { Args: { p_token: string }; Returns: Json }
+      search_products: {
+        Args: {
+          p_category_slug?: string
+          p_collection_slug?: string
+          p_colors?: string[]
+          p_in_stock_only?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_on_sale?: boolean
+          p_query?: string
+          p_sizes?: string[]
+          p_sort?: string
+        }
+        Returns: Json
+      }
       set_cart_line_quantity: {
         Args: { p_quantity: number; p_token: string; p_variant_id: string }
         Returns: Json

@@ -1,0 +1,1 @@
+add,arrow_back,arrow_forward,arrow_outward,autorenew,card_giftcard,chat,check_circle,chevron_left,chevron_right,close,credit_card,east,expand_more,favorite,help,inventory_2,link,local_shipping,lock,logout,music_note,person,photo_camera,remove,search,search_off,shopping_bag,star,storefront,straighten,thumb_up,tune,verified,visibility_off
