@@ -58,8 +58,10 @@ export function Header({
           <Image
             src={logoUrl}
             alt="LUMANE"
-            width={180}
-            height={36}
+            // Tamaño intrínseco real del archivo (150x54). Declarar otra
+            // proporción hace que Next reserve una caja deformada.
+            width={150}
+            height={54}
             priority
             className="h-7 md:h-9 w-auto object-contain"
           />

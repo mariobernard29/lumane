@@ -65,8 +65,8 @@ export function Footer({
             <Image
               src={logoUrl}
               alt="LUMANE"
-              width={160}
-              height={32}
+              width={150}
+              height={54}
               className="h-8 w-auto object-contain brightness-0 invert"
             />
           </Link>
