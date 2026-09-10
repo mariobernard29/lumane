@@ -264,13 +264,18 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
  *
  * Sin esto, cada intento fallido dejaría piezas bloqueadas hasta que caducara
  * la reserva —veinte minutos en los que la boutique no puede venderlas.
+ *
+ * Usa el cliente NORMAL, con el token del carrito, no la llave de servicio.
+ * La primera versión sí usaba la llave y tenía un fallo real: cuando el pedido
+ * fallaba PORQUE faltaba esa llave, la limpieza fallaba por lo mismo y la pieza
+ * se quedaba reservada. Una acción compensatoria no puede depender de más
+ * privilegio que la operación que compensa.
  */
 async function releaseReservation(token: string): Promise<void> {
-  try {
-    const admin = createAdminSupabase()
-    const { data: cart } = await admin.from('carts').select('id').eq('token', token).maybeSingle()
-    if (cart) await admin.rpc('release_cart_reservations', { p_cart_id: cart.id })
-  } catch {
-    // Sin llave de servicio no se puede liberar; pg_cron lo hará al caducar.
+  const supabase = await createServerSupabase()
+  const { error } = await supabase.rpc('release_cart_stock', { p_token: token })
+  if (error) {
+    // Si aun así falla, el barrido de pg_cron lo recupera al caducar.
+    console.error('[checkout] no se pudo liberar la reserva:', error.message)
   }
 }

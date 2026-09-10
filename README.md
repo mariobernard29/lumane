@@ -52,5 +52,7 @@ pnpm --filter @lumane/web dev
 
 - **Fase 0 · Cimientos** — completa: monorepo, tokens, esquema con RLS,
   motor de precios, RPC de venta y checkout, siembra del catálogo.
-- **Fase 1 · Tienda en línea** — en curso: portada terminada; faltan catálogo,
+- **Fase 1 · Tienda en línea** — en curso: portada, catálogo con filtros, ficha de producto,
+  carrito y checkout terminados. Falta el área de clienta, las páginas de contenido
+  y activar el pago con tarjeta (Stripe).
   ficha de producto, carrito, checkout con Stripe y área de clienta.
