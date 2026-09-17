@@ -84,10 +84,15 @@ Publicar reseñas inventadas en una tienda real engaña a quien compra.
 
 ## Nota sobre el proyecto original
 
-El proyecto `izyoixhffjjodzizkbqk` (creado el 2026-09-01) dejó de resolver por
-DNS y de aparecer en la sesión MCP. Todo lo que contenía era la siembra inicial
-y tres reseñas de demostración: nada irrecuperable. Este documento existe porque
-ese incidente demostró que el procedimiento hacía falta escrito.
+El proyecto `izyoixhffjjodzizkbqk` dejó de resolver por DNS y desapareció de la
+sesión MCP durante unas horas. **Estaba PAUSADO, no borrado**: al reactivarlo
+volvió íntegro, con sus 11 productos, sus 102 piezas de inventario y sus 26
+migraciones aplicadas.
+
+Supabase pausa los proyectos del plan gratuito tras un periodo de inactividad y
+mientras están pausados su subdominio deja de resolver, que es exactamente lo
+que parece una eliminación. Este documento se escribió durante ese susto y se
+queda: el procedimiento hacía falta igual.
 
 ## Datos de prueba que hay que borrar antes de abrir
 
