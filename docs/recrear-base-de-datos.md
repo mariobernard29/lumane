@@ -94,6 +94,34 @@ mientras están pausados su subdominio deja de resolver, que es exactamente lo
 que parece una eliminación. Este documento se escribió durante ese susto y se
 queda: el procedimiento hacía falta igual.
 
+## El texto de las páginas de contenido NO está en el repositorio
+
+Las migraciones crean las filas de `pages` (slug, título, plantilla) y la
+siembra crea el catálogo, pero **el cuerpo de las páginas de contenido vive
+solo en la base de datos**.
+
+Es deliberado: ese texto es contenido que la boutique escribe y corrige desde
+el administrador, igual que los precios o el hero. Si `seed.sql` lo
+reescribiera, cada ejecución machacaría la redacción del aviso de privacidad o
+de la política de devoluciones.
+
+La consecuencia es que **una base recreada de cero tendrá las páginas vacías y
+despublicadas**. Para no perder la redacción de arranque:
+
+1. **Activa los respaldos automáticos** del proyecto en Supabase. Es la
+   protección real de todo el contenido, no solo de estas páginas.
+2. Si necesitas moverte de proyecto, exporta antes las tablas de contenido:
+
+```sql
+-- Desde el editor SQL del proyecto viejo, y pegar el resultado en el nuevo.
+select format(
+  $update public.pages set excerpt=%L, body=%L, is_published=%L where slug=%L;$,
+  excerpt, body, is_published, slug)
+from public.pages where body is not null;
+```
+
+Lo mismo aplica a `faqs`, `hero_slides`, `banners`, `page_sections` y
+`store_settings`.
 ## Datos de prueba que hay que borrar antes de abrir
 
 Durante el desarrollo se crearon datos de demostración. **Publicarlos en una

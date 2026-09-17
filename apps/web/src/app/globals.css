@@ -320,3 +320,132 @@ body {
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Contenido de las páginas (Markdown renderizado)
+   ----------------------------------------------------------------------------
+   Tailwind resetea todos los elementos, así que el HTML que sale del Markdown
+   necesita estilos propios. Se escriben aquí en lugar de usar un plugin de
+   tipografía para que las escalas sean EXACTAMENTE las del prototipo y no las
+   de otro sistema de diseño.
+   -------------------------------------------------------------------------- */
+.prose-lumane {
+  font-family: var(--font-body-md);
+  font-size: var(--text-body-md);
+  line-height: 1.65;
+  color: var(--color-secondary);
+}
+
+.prose-lumane > * + * {
+  margin-top: 1.25rem;
+}
+
+.prose-lumane h2 {
+  font-family: var(--font-headline-md);
+  font-size: var(--text-headline-md);
+  line-height: 1.2;
+  color: var(--color-primary);
+  margin-top: 3rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-primary);
+}
+.prose-lumane > h2:first-child {
+  margin-top: 0;
+}
+
+.prose-lumane h3 {
+  font-family: var(--font-headline-sm);
+  font-size: var(--text-headline-sm);
+  line-height: 1.35;
+  color: var(--color-primary);
+  margin-top: 2.25rem;
+}
+
+.prose-lumane h4 {
+  font-family: var(--font-label-upper);
+  font-size: var(--text-label-upper);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-top: 2rem;
+}
+
+.prose-lumane strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.prose-lumane a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.15s ease;
+}
+.prose-lumane a:hover {
+  color: var(--color-accent-red);
+}
+
+.prose-lumane ul,
+.prose-lumane ol {
+  padding-left: 1.5rem;
+}
+.prose-lumane ul {
+  list-style: disc;
+}
+.prose-lumane ol {
+  list-style: decimal;
+}
+.prose-lumane li::marker {
+  color: var(--color-accent-red);
+}
+.prose-lumane li + li {
+  margin-top: 0.5rem;
+}
+
+/* El aviso de borrador de las páginas legales y cualquier nota destacada. */
+.prose-lumane blockquote {
+  border-left: 2px solid var(--color-accent-red);
+  padding: 1rem 0 1rem 1.5rem;
+  background: var(--color-vellum-neutral);
+  font-size: 15px;
+}
+.prose-lumane blockquote > * + * {
+  margin-top: 0.75rem;
+}
+
+.prose-lumane code {
+  font-size: 0.9em;
+  background: var(--color-surface-container);
+  padding: 0.15em 0.4em;
+}
+
+/* Las tablas de tarifas y de tallas. Desbordan con scroll propio en móvil:
+   el cuerpo de la página nunca debe desplazarse en horizontal. */
+.prose-lumane table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.prose-lumane th,
+.prose-lumane td {
+  text-align: left;
+  padding: 0.85rem 1rem 0.85rem 0;
+  border-bottom: 1px solid var(--color-surface-variant);
+  white-space: nowrap;
+}
+.prose-lumane th {
+  font-family: var(--font-label-upper);
+  font-size: var(--text-label-upper);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.prose-lumane hr {
+  border: 0;
+  border-top: 1px solid var(--color-surface-variant);
+  margin-top: 2.5rem;
+}

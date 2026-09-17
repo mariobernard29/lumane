@@ -1498,6 +1498,7 @@ export type Database = {
           seo_description: string | null
           seo_title: string | null
           slug: string
+          template: string
           title: string
           updated_at: string
         }
@@ -1511,6 +1512,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           slug: string
+          template?: string
           title: string
           updated_at?: string
         }
@@ -1524,6 +1526,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           slug?: string
+          template?: string
           title?: string
           updated_at?: string
         }
