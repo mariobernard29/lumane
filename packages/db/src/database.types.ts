@@ -2865,6 +2865,7 @@ export type Database = {
         Returns: Json
       }
       get_cart: { Args: { p_token?: string }; Returns: Json }
+      get_my_orders: { Args: { p_limit?: number }; Returns: Json }
       get_order_by_token: {
         Args: { p_guest_token: string; p_order_number: string }
         Returns: Json
@@ -2921,6 +2922,16 @@ export type Database = {
       }
       set_cart_line_quantity: {
         Args: { p_quantity: number; p_token: string; p_variant_id: string }
+        Returns: Json
+      }
+      update_my_profile: {
+        Args: {
+          p_accepts_marketing?: boolean
+          p_birthday?: string
+          p_first_name?: string
+          p_last_name?: string
+          p_phone?: string
+        }
         Returns: Json
       }
       validate_coupon: {

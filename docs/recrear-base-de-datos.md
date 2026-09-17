@@ -88,3 +88,21 @@ El proyecto `izyoixhffjjodzizkbqk` (creado el 2026-09-01) dejó de resolver por
 DNS y de aparecer en la sesión MCP. Todo lo que contenía era la siembra inicial
 y tres reseñas de demostración: nada irrecuperable. Este documento existe porque
 ese incidente demostró que el procedimiento hacía falta escrito.
+
+## Datos de prueba que hay que borrar antes de abrir
+
+Durante el desarrollo se crearon datos de demostración. **Publicarlos en una
+tienda real engaña a quien compra o deja una puerta abierta**:
+
+```sql
+-- Reseñas inventadas (se pusieron para poder revisar el diseño de esa sección)
+delete from public.product_reviews where customer_id is null and order_id is null;
+
+-- Cuenta de prueba (marina.prueba@ejemplo.mx, con contraseña conocida)
+delete from auth.users where email like '%@ejemplo.mx';
+```
+
+Borrar el usuario arrastra su fila de `customers` solo si no tiene pedidos; si
+los tiene, la fila queda con `auth_user_id` en null, que es lo correcto: el
+historial de compras de la boutique no se pierde porque alguien cierre su
+cuenta.
