@@ -47,3 +47,16 @@ export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return ''
   return DATE.format(typeof value === 'string' ? new Date(value) : value)
 }
+
+/**
+ * Enlace a la conversación de WhatsApp de la boutique.
+ *
+ * `wa.me` solo admite dígitos: un número escrito como "668 123 4567" abre una
+ * página de error. Se limpia aquí y no en cada sitio que lo use, porque el
+ * número se escribe para leerse y no para pegarse en una URL.
+ */
+export function whatsappHref(number: string | null | undefined): string | null {
+  if (!number) return null
+  const digits = number.replace(/\D/g, '')
+  return digits ? `https://wa.me/${digits}` : null
+}

@@ -10,7 +10,7 @@
  * variante aquí — no una clase suelta allá.
  */
 export { cn } from './lib/cn.ts'
-export { formatPrice, formatDate, discountPercent } from './lib/format.ts'
+export { formatPrice, formatDate, discountPercent, whatsappHref } from './lib/format.ts'
 
 export { Icon, type IconProps } from './components/Icon.tsx'
 export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from './components/Button.tsx'
@@ -19,6 +19,9 @@ export { NoiseOverlay } from './components/NoiseOverlay.tsx'
 export { TouchReveal } from './components/TouchReveal.tsx'
 export { ProductCard, type ProductCardProps } from './components/ProductCard.tsx'
 export { Tile, type TileProps } from './components/Tile.tsx'
+export { TagLink, type TagLinkProps } from './components/TagLink.tsx'
+export { FeatureBanner, type FeatureBannerProps } from './components/FeatureBanner.tsx'
+export { SearchField, type SearchFieldProps } from './components/SearchField.tsx'
 export { SectionHeader, type SectionHeaderProps } from './components/SectionHeader.tsx'
 export { Breadcrumbs, type Crumb } from './components/Breadcrumbs.tsx'
 export {

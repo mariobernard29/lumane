@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { whatsappHref } from '../lib/format.ts'
 import { Icon } from './Icon.tsx'
 
 export interface FooterLink {
@@ -116,10 +117,10 @@ export function Footer({
                 </a>
               </li>
             ) : null}
-            {whatsappNumber ? (
+            {whatsappNumber && whatsappHref(whatsappNumber) ? (
               <li>
                 <a
-                  href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}`}
+                  href={whatsappHref(whatsappNumber)!}
                   target="_blank"
                   rel="noreferrer noopener"
                   className="hover:text-white transition-colors"

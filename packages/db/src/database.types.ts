@@ -295,6 +295,7 @@ export type Database = {
       collections: {
         Row: {
           badge_label: string | null
+          banner_alt: string | null
           banner_path: string | null
           created_at: string
           description: string | null
@@ -311,6 +312,7 @@ export type Database = {
         }
         Insert: {
           badge_label?: string | null
+          banner_alt?: string | null
           banner_path?: string | null
           created_at?: string
           description?: string | null
@@ -327,6 +329,7 @@ export type Database = {
         }
         Update: {
           badge_label?: string | null
+          banner_alt?: string | null
           banner_path?: string | null
           created_at?: string
           description?: string | null
@@ -1654,6 +1657,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "product_collections_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_collections"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "product_collections_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -2782,6 +2792,24 @@ export type Database = {
             referencedColumns: ["product_id"]
           },
         ]
+      }
+      v_public_collections: {
+        Row: {
+          badge_label: string | null
+          banner_alt: string | null
+          banner_path: string | null
+          description: string | null
+          id: string | null
+          image_alt: string | null
+          image_path: string | null
+          name: string | null
+          position: number | null
+          product_count: number | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string | null
+        }
+        Relationships: []
       }
       v_stock_alerts: {
         Row: {

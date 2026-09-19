@@ -104,7 +104,11 @@ export const getCollectionTiles = cache(async (limit = 4): Promise<CollectionTil
   }))
 })
 
-export interface HomeSection {
+/**
+ * Una sección componible de una página. No es exclusiva de la portada:
+ * `/colecciones` y `/buscar` cierran con bloques leídos de aquí.
+ */
+export interface PageSection {
   id: string
   type: string
   eyebrow: string | null
@@ -114,10 +118,10 @@ export interface HomeSection {
 }
 
 /**
- * Las secciones de la portada y su orden viven en la base. Cambiar el orden o
+ * Las secciones de una página y su orden viven en la base. Cambiar el orden o
  * apagar un bloque es mover una fila desde el POS, no desplegar código.
  */
-export const getPageSections = cache(async (pageKey = 'home'): Promise<HomeSection[]> => {
+export const getPageSections = cache(async (pageKey = 'home'): Promise<PageSection[]> => {
   const supabase = await createServerSupabase()
   const { data } = await supabase
     .from('page_sections')

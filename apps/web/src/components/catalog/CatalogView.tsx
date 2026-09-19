@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import {
   Breadcrumbs,
   Button,
@@ -33,6 +34,14 @@ interface CatalogViewProps {
   /** Slug de categoría activo, si la ruta es una landing de categoría. */
   activeCategorySlug?: string | null
   sizeGuideHref?: string | null
+  /** Eyebrow sobre el título: "Colección", "Serie numerada"… */
+  eyebrow?: string | null
+  /**
+   * Fotografía apaisada sobre el encabezado. La usan las landings de colección,
+   * que son lo único de la tienda con una imagen propia de portada; el catálogo
+   * y las rebajas entran directamente al título.
+   */
+  banner?: { imageUrl: string; imageAlt: string } | null
 }
 
 /**
@@ -53,6 +62,8 @@ export function CatalogView({
   sortOptions,
   activeCategorySlug = null,
   sizeGuideHref,
+  eyebrow,
+  banner,
 }: CatalogViewProps) {
   const href = (overrides: Partial<CatalogParams>) =>
     buildCatalogHref({ basePath, params, allowedSorts: sortOptions, overrides })
@@ -112,7 +123,31 @@ export function CatalogView({
     <>
       <Breadcrumbs items={crumbs} />
 
+      {banner ? (
+        <div className="px-5 sm:px-margin-edge pt-6">
+          <div className="relative w-full aspect-[16/9] md:aspect-[5/2] overflow-hidden border border-primary bg-editorial-ink">
+            {/* `object-top`, como en el Hero: las fotografías de la boutique son
+                verticales y recortar una franja ancha por el centro deja a la
+                modelo sin cabeza. Anclando arriba, una foto de retrato aguanta
+                el formato apaisado hasta que haya una tomada para esto. */}
+            <Image
+              src={banner.imageUrl}
+              alt={banner.imageAlt}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-top"
+            />
+          </div>
+        </div>
+      ) : null}
+
       <header className="px-5 sm:px-margin-edge pt-8 pb-10 md:pb-14">
+        {eyebrow ? (
+          <p className="font-label-upper text-label-upper uppercase text-accent-red mb-4">
+            {eyebrow}
+          </p>
+        ) : null}
         <h1 className="font-display-xl-mobile md:font-display-xl text-display-xl-mobile md:text-display-xl uppercase mb-6">
           {title}
         </h1>
