@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Lumane POS",
+    "slug": "lumane-pos",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "scheme": "lumanepos",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "platforms": ["android"],
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0A"
+    },
+    "android": {
+      "package": "mx.lumane.pos",
+      "versionCode": 1,
+      "adaptiveIcon": { "backgroundColor": "#0A0A0A" },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Lumane usa la cámara para leer el código de barras de las prendas."
+        }
+      ]
+    ],
+    "experiments": { "typedRoutes": true },
+    "extra": { "eas": { "projectId": "" } }
+  }
+}

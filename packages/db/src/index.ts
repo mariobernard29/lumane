@@ -64,12 +64,22 @@ export type OrderChannel = Enum<'order_channel'>
 export type ShippingKind = Enum<'shipping_kind'>
 
 /**
- * Cliente básico, sin manejo de sesión. Sirve para el POS y para scripts.
- * En `apps/web` NO se usa: ahí manda `@supabase/ssr`, que sincroniza la sesión
+ * Cliente tipado. Lo usan el POS y los scripts.
+ *
+ * `options` queda abierto porque cada superficie guarda la sesión en un sitio
+ * distinto: la tablet en el almacén seguro de Android, un script en ninguna
+ * parte. Lo que este paquete fija es el TIPADO contra el esquema, que es lo
+ * que de verdad tiene que ser igual en todos lados.
+ *
+ * En `apps/web` no se usa: ahí manda `@supabase/ssr`, que sincroniza la sesión
  * con las cookies de la petición.
  */
-export function createClient(url: string, key: string): LumaneClient {
-  return createSupabaseClient<Database>(url, key)
+export function createClient(
+  url: string,
+  key: string,
+  options?: Parameters<typeof createSupabaseClient>[2],
+): LumaneClient {
+  return createSupabaseClient<Database>(url, key, options)
 }
 
 export * from './storage.ts'

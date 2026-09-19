@@ -2897,6 +2897,7 @@ export type Database = {
       }
       get_cart: { Args: { p_token?: string }; Returns: Json }
       get_my_orders: { Args: { p_limit?: number }; Returns: Json }
+      get_my_staff_profile: { Args: never; Returns: Json }
       get_order_by_payment_intent: {
         Args: { p_provider_payment_id?: string }
         Returns: Json
@@ -2914,6 +2915,10 @@ export type Database = {
       }
       pos_create_return: { Args: { p_payload: Json }; Returns: Json }
       pos_create_sale: { Args: { p_payload: Json }; Returns: Json }
+      pos_search_variants: {
+        Args: { p_limit?: number; p_location_id?: string; p_query?: string }
+        Returns: Json
+      }
       preview_checkout: {
         Args: {
           p_coupon_code?: string

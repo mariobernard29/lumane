@@ -1,4 +1,11 @@
 {
   "extends": "@lumane/config/tsconfig.lib.json",
+  "compilerOptions": {
+    // `URLSearchParams` y `fetch` no están en la librería ES2022: son globales
+    // del entorno. Los tres que consumen este paquete los tienen —el navegador,
+    // Node y Hermes en la tablet—, así que se declaran con `DOM` en lugar de
+    // reescribir el código para evitarlos.
+    "lib": ["ES2022", "DOM"]
+  },
   "include": ["src/**/*.ts"]
 }
