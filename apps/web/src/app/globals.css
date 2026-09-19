@@ -305,6 +305,15 @@ body {
   box-shadow: none;
 }
 
+/* La cruz que los navegadores WebKit dibujan solos dentro de un
+   `input[type=search]`: aparece al pasar el cursor, es azul de sistema y hace
+   exactamente lo mismo que la nuestra, dos centímetros más a la izquierda. */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* ---------------------------------------------------------------------------
    Accesibilidad
    -------------------------------------------------------------------------- */

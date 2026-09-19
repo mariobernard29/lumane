@@ -42,7 +42,7 @@ Con el CLI de Supabase (`npm i -g supabase`):
 
 ```bash
 supabase link --project-ref <nuevo-ref>
-supabase db push                      # aplica las 36 migraciones en orden
+supabase db push                      # aplica las 37 migraciones en orden
 psql "$DATABASE_URL" -f supabase/seed.sql
 ```
 
