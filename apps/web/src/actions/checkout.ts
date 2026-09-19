@@ -186,15 +186,12 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   }
 
   // ---- 3. Pago --------------------------------------------------------------
-  // Stripe entra por su webhook, no por aquí: el pedido lo confirma el aviso de
-  // la pasarela, no el navegador de quien compra.
+  // Esta acción cierra SOLO los pedidos por transferencia. El pago con tarjeta
+  // no puede cerrarse desde el navegador —sería fiarse de quien compra— así que
+  // va por `startCardPayment` y lo confirma el webhook de Stripe.
   if (data.paymentMethod === 'stripe') {
     await releaseReservation(token)
-    return {
-      ok: false,
-      message:
-        'El pago con tarjeta aún no está activo. Elige transferencia bancaria mientras tanto.',
-    }
+    return { ok: false, message: 'Usa el pago con tarjeta desde su propio formulario.' }
   }
 
   const payment = {

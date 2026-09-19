@@ -3,9 +3,15 @@
 import { useEffect, useState, useTransition } from 'react'
 import { Button, Icon, cn, formatPrice } from '@lumane/ui-web'
 
-import { placeOrder, quoteCheckout, type CheckoutAddress } from '@/actions/checkout'
+import {
+  placeOrder,
+  quoteCheckout,
+  type CheckoutAddress,
+  type PlaceOrderInput,
+} from '@/actions/checkout'
 import type { CartTotals } from '@/lib/queries/cart'
 import type { ShippingMethod } from '@/lib/queries/shipping'
+import { CardPaymentSection } from './CardPaymentSection'
 import { SelectField, TextField } from './Field'
 
 /** Estados mexicanos, para no depender de que se escriban bien a mano. */
@@ -22,6 +28,8 @@ interface CheckoutFormProps {
   initialTotals: CartTotals
   /** Ciudad de la boutique: la entrega local solo aplica ahí. */
   localCity: string
+  /** Solo se ofrece tarjeta si Stripe está configurado en el servidor. */
+  stripeEnabled: boolean
   customer: { email: string; firstName: string; lastName: string | null } | null
 }
 
@@ -41,7 +49,13 @@ const EMPTY_ADDRESS: CheckoutAddress = {
   lng: null,
 }
 
-export function CheckoutForm({ methods, initialTotals, localCity, customer }: CheckoutFormProps) {
+export function CheckoutForm({
+  methods,
+  initialTotals,
+  localCity,
+  customer,
+  stripeEnabled,
+}: CheckoutFormProps) {
   const [email, setEmail] = useState(customer?.email ?? '')
   const [firstName, setFirstName] = useState(customer?.firstName ?? '')
   const [lastName, setLastName] = useState(customer?.lastName ?? '')
@@ -49,7 +63,9 @@ export function CheckoutForm({ methods, initialTotals, localCity, customer }: Ch
   const [address, setAddress] = useState<CheckoutAddress>(EMPTY_ADDRESS)
 
   const [shippingCode, setShippingCode] = useState(methods[0]?.code ?? '')
-  const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'stripe'>('transfer')
+  const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'stripe'>(
+    stripeEnabled ? 'stripe' : 'transfer',
+  )
 
   const [couponInput, setCouponInput] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
@@ -117,20 +133,63 @@ export function CheckoutForm({ methods, initialTotals, localCity, customer }: Ch
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shippingCode, address.lat, address.lng])
 
+  /**
+   * Los datos del pedido tal como están en este momento.
+   *
+   * Lo usan las dos vías de pago. En "recoger en boutique" no hay dirección de
+   * envío, así que se rellena con la de la boutique: el pedido necesita una
+   * dirección válida aunque nadie vaya a llevarlo a ninguna parte.
+   */
+  function buildOrderInput(): PlaceOrderInput {
+    return {
+      email,
+      firstName,
+      lastName: lastName || null,
+      shippingMethodCode: shippingCode,
+      paymentMethod,
+      couponCode: appliedCoupon,
+      note: null,
+      acceptsMarketing,
+      address: isPickup
+        ? {
+            ...address,
+            recipient: firstName || address.recipient || 'Recoge en boutique',
+            street: address.street || `Recoge en boutique de ${localCity}`,
+            city: address.city || localCity,
+            postalCode: address.postalCode || '81200',
+          }
+        : address,
+    }
+  }
+
+  /**
+   * Validación previa al cobro con tarjeta.
+   *
+   * El formulario nativo ya valida los campos `required` al enviarse, pero el
+   * botón de tarjeta no envía el formulario: dispara Stripe. Sin esta
+   * comprobación se podría reservar inventario y abrir un cobro con la
+   * dirección a medias.
+   */
+  function validateForCard(): string | null {
+    if (!email.trim()) return 'Escribe tu correo electrónico'
+    if (!firstName.trim()) return 'Escribe tu nombre'
+    if (!shippingCode) return 'Elige un método de envío'
+    if (!address.phone.trim()) return 'Escribe un teléfono de contacto'
+
+    if (!isPickup) {
+      if (!address.recipient.trim()) return 'Escribe quién recibe el pedido'
+      if (!address.street.trim()) return 'Escribe la calle'
+      if (!address.city.trim()) return 'Escribe la ciudad'
+      if (!/^\d{5}$/.test(address.postalCode)) return 'El código postal son 5 dígitos'
+    }
+
+    return null
+  }
+
   function submit() {
     setFormError(null)
     startPlace(async () => {
-      const result = await placeOrder({
-        email,
-        firstName,
-        lastName: lastName || null,
-        shippingMethodCode: shippingCode,
-        paymentMethod,
-        couponCode: appliedCoupon,
-        note: null,
-        acceptsMarketing,
-        address: isPickup ? { ...address, recipient: firstName || address.recipient } : address,
-      })
+      const result = await placeOrder(buildOrderInput())
       // Al cerrarse bien, la acción redirige y esto no llega a ejecutarse.
       if (result && !result.ok) setFormError(result.message ?? 'No pudimos cerrar el pedido')
     })
@@ -391,6 +450,33 @@ export function CheckoutForm({ methods, initialTotals, localCity, customer }: Ch
           </legend>
 
           <div className="flex flex-col gap-3">
+            {stripeEnabled ? (
+              <label
+                className={cn(
+                  'flex items-start gap-4 cursor-pointer p-5 md:p-6 transition-colors',
+                  paymentMethod === 'stripe'
+                    ? 'border-2 border-primary'
+                    : 'border border-surface-variant',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="pago"
+                  checked={paymentMethod === 'stripe'}
+                  onChange={() => setPaymentMethod('stripe')}
+                  className="w-5 h-5 mt-0.5 border-secondary text-primary focus:ring-0 focus:ring-offset-0"
+                />
+                <span>
+                  <span className="block font-body-md text-body-md">
+                    Tarjeta de crédito o débito
+                  </span>
+                  <span className="block font-body-md text-[13px] text-secondary mt-1">
+                    Pago inmediato y seguro. Tu pedido sale en cuanto se confirma el cobro.
+                  </span>
+                </span>
+              </label>
+            ) : null}
+
             <label
               className={cn(
                 'flex items-start gap-4 cursor-pointer p-5 md:p-6 transition-colors',
@@ -416,29 +502,20 @@ export function CheckoutForm({ methods, initialTotals, localCity, customer }: Ch
                 </span>
               </span>
             </label>
-
-            <label
-              className={cn(
-                'flex items-start gap-4 p-5 md:p-6 cursor-not-allowed opacity-50',
-                'border border-surface-variant',
-              )}
-            >
-              <input
-                type="radio"
-                name="pago"
-                disabled
-                checked={false}
-                readOnly
-                className="w-5 h-5 mt-0.5 border-secondary"
-              />
-              <span>
-                <span className="block font-body-md text-body-md">Tarjeta de crédito o débito</span>
-                <span className="block font-body-md text-[13px] text-secondary mt-1">
-                  Disponible muy pronto.
-                </span>
-              </span>
-            </label>
           </div>
+
+          {/* El formulario de tarjeta aparece bajo su opción, no en un paso
+              aparte: el prototipo expande el panel de pago en la misma vista. */}
+          {paymentMethod === 'stripe' ? (
+            <div className="mt-6">
+              <CardPaymentSection
+                amountCents={totals.totalCents}
+                getOrderInput={buildOrderInput}
+                validate={validateForCard}
+                disabled={isQuoting || totals.shippingAvailable === false}
+              />
+            </div>
+          ) : null}
         </fieldset>
 
         {formError ? (
@@ -447,15 +524,21 @@ export function CheckoutForm({ methods, initialTotals, localCity, customer }: Ch
           </p>
         ) : null}
 
-        <Button
-          type="submit"
-          variant="solid"
-          fullWidth
-          disabled={isPlacing || isQuoting || totals.shippingAvailable === false}
-          className="h-16 sm:h-14"
-        >
-          {isPlacing ? 'Cerrando el pedido…' : `Confirmar pedido · ${formatPrice(totals.totalCents, true)}`}
-        </Button>
+        {/* El botón de tarjeta vive dentro de `CardPaymentSection`: solo él
+            sabe si los campos de Stripe están completos. */}
+        {paymentMethod === 'transfer' ? (
+          <Button
+            type="submit"
+            variant="solid"
+            fullWidth
+            disabled={isPlacing || isQuoting || totals.shippingAvailable === false}
+            className="h-16 sm:h-14"
+          >
+            {isPlacing
+              ? 'Cerrando el pedido…'
+              : `Confirmar pedido · ${formatPrice(totals.totalCents, true)}`}
+          </Button>
+        ) : null}
 
         <p className="font-body-md text-[13px] text-text-muted mt-4">
           Al confirmar aceptas nuestros{' '}

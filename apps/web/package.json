@@ -13,6 +13,8 @@
     "@lumane/db": "workspace:*",
     "@lumane/tokens": "workspace:*",
     "@lumane/ui-web": "workspace:*",
+    "@stripe/react-stripe-js": "^6.10.0",
+    "@stripe/stripe-js": "^9.16.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.58.0",
     "isomorphic-dompurify": "^4.2.0",
@@ -20,6 +22,7 @@
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "stripe": "^22.6.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {

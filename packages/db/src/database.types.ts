@@ -2869,6 +2869,10 @@ export type Database = {
       }
       get_cart: { Args: { p_token?: string }; Returns: Json }
       get_my_orders: { Args: { p_limit?: number }; Returns: Json }
+      get_order_by_payment_intent: {
+        Args: { p_provider_payment_id?: string }
+        Returns: Json
+      }
       get_order_by_token: {
         Args: { p_guest_token: string; p_order_number: string }
         Returns: Json
