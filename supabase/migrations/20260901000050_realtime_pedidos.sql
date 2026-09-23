@@ -1,0 +1,25 @@
+-- ============================================================================
+-- Lumane · 0050 · La tablet se entera al instante de un pedido nuevo
+-- ============================================================================
+-- La publicación `supabase_realtime` existía vacía: ni una tabla. Se añade
+-- `orders` y solo `orders`.
+--
+-- POR QUÉ SOLO ESA. Realtime aquí es un TIMBRE, no una fuente de datos. Al
+-- recibir el aviso, la tablet vuelve a llamar a `list_staff_orders` y repinta
+-- con lo que diga la base. No se mezcla la fila del evento con la lista: así no
+-- hay lógica de fusión que mantener, ni huecos cuando se pierde un evento, ni
+-- divergencia entre lo que se ve y lo que hay. Publicar `order_lines` o
+-- `payments` solo multiplicaría los avisos por el mismo repintado.
+--
+-- POR QUÉ NO `replica identity full`. Con la identidad por omisión —la clave
+-- primaria— el WAL lleva solo el id de la fila cambiada, que es cuanto hace
+-- falta para saber QUE algo pasó. `full` mandaría la fila vieja entera en cada
+-- update: más WAL, y los datos de la clienta viajando por el canal sin
+-- necesidad.
+--
+-- La RLS se aplica por suscriptor en Postgres Changes, y `orders_staff_read`
+-- ya exige `orders.read`: una clienta con sesión en la tienda no recibiría
+-- avisos de los pedidos de otras.
+-- ============================================================================
+
+alter publication supabase_realtime add table public.orders;

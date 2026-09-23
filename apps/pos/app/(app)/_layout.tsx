@@ -20,7 +20,7 @@ import { color, s, size, space, text } from '@/theme'
  */
 
 interface Modulo {
-  href: '/venta' | '/caja' | '/pedidos' | '/inventario' | '/clientes'
+  href: '/venta' | '/caja' | '/pedidos' | '/historial' | '/inventario' | '/clientes'
   label: string
   /** Sin este permiso el módulo no se pinta: no se ofrecen callejones sin salida. */
   permission: string
@@ -32,6 +32,7 @@ const MODULOS: Modulo[] = [
   { href: '/venta', label: 'Venta', permission: 'sales.create' },
   { href: '/caja', label: 'Caja', permission: 'register.open' },
   { href: '/pedidos', label: 'Pedidos', permission: 'orders.read', contador: true },
+  { href: '/historial', label: 'Historial', permission: 'orders.read' },
   { href: '/inventario', label: 'Inventario', permission: 'inventory.read' },
   { href: '/clientes', label: 'Clientes', permission: 'customers.read' },
 ]
@@ -92,7 +93,9 @@ function Marco() {
 
         <View style={l.modulos}>
           {visibles.map((modulo) => {
-            const activo = pathname.startsWith(modulo.href)
+            // Coincidencia exacta o con barra detrás. Con `startsWith` a secas,
+            // dos rutas que comparten prefijo se iluminarían a la vez.
+            const activo = pathname === modulo.href || pathname.startsWith(modulo.href + '/')
             return (
               <Pressable
                 key={modulo.href}
