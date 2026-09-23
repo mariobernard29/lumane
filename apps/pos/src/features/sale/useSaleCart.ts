@@ -27,7 +27,14 @@ export function useSaleCart(taxRate = 0.16) {
   const [lines, setLines] = useState<SaleLine[]>([])
   const [manualDiscountCents, setManualDiscountCents] = useState(0)
   const [couponCode, setCouponCode] = useState<string | null>(null)
-  const [customerId, setCustomerId] = useState<string | null>(null)
+  // La clienta de esta venta. Se guarda su nombre y su correo además del id:
+  // el id es lo único que viaja al RPC, pero la hoja de cobro tiene que poder
+  // pintar a quién se asoció, y la del ticket prellenar su correo.
+  const [customer, setCustomer] = useState<{
+    id: string
+    nombre: string
+    email: string | null
+  } | null>(null)
   const [note, setNote] = useState('')
   const [clientUuid, setClientUuid] = useState(() => crearUuid())
 
@@ -69,7 +76,7 @@ export function useSaleCart(taxRate = 0.16) {
     setLines([])
     setManualDiscountCents(0)
     setCouponCode(null)
-    setCustomerId(null)
+    setCustomer(null)
     setNote('')
     setClientUuid(crearUuid())
   }, [])
@@ -83,7 +90,7 @@ export function useSaleCart(taxRate = 0.16) {
   const buildPayload = useCallback(
     (payments: { method: string; amount_cents: number; tendered_cents?: number; reference?: string }[]) => ({
       client_uuid: clientUuid,
-      customer_id: customerId,
+      customer_id: customer?.id ?? null,
       coupon_code: couponCode,
       manual_discount_cents: manualDiscountCents,
       note: note.trim() === '' ? null : note.trim(),
@@ -94,7 +101,7 @@ export function useSaleCart(taxRate = 0.16) {
       })),
       payments,
     }),
-    [clientUuid, customerId, couponCode, manualDiscountCents, note, lines],
+    [clientUuid, customer, couponCode, manualDiscountCents, note, lines],
   )
 
   return {
@@ -103,7 +110,7 @@ export function useSaleCart(taxRate = 0.16) {
     clientUuid,
     manualDiscountCents,
     couponCode,
-    customerId,
+    customer,
     note,
     add,
     setQty,
@@ -111,7 +118,7 @@ export function useSaleCart(taxRate = 0.16) {
     discountLine,
     setManualDiscountCents,
     setCouponCode,
-    setCustomerId,
+    setCustomer,
     setNote,
     reset,
     buildPayload,

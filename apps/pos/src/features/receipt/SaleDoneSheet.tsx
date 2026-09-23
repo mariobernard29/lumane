@@ -29,16 +29,19 @@ export function SaleDoneSheet({
   orderId,
   orderNumber,
   changeCents,
+  correoSugerido,
   onClose,
 }: {
   orderId: string
   orderNumber: string
   changeCents: number
+  /** El de la clienta asociada, si la venta llevaba una. */
+  correoSugerido?: string | null
   onClose: () => void
 }) {
   const destinos = destinosDisponibles()
   const [destino, setDestino] = useState<DestinoTicket | null>(null)
-  const [dato, setDato] = useState('')
+  const [dato, setDato] = useState(correoSugerido ?? '')
   const [enviando, setEnviando] = useState(false)
   const [enviado, setEnviado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)

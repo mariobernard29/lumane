@@ -2903,6 +2903,7 @@ export type Database = {
         Returns: Json
       }
       get_cart: { Args: { p_token?: string }; Returns: Json }
+      get_customer_profile: { Args: { p_customer_id: string }; Returns: Json }
       get_my_orders: { Args: { p_limit?: number }; Returns: Json }
       get_my_staff_profile: { Args: never; Returns: Json }
       get_order_by_payment_intent: {
@@ -2916,6 +2917,15 @@ export type Database = {
       get_pos_sale: { Args: { p_order_id: string }; Returns: Json }
       get_register_summary: { Args: { p_session_id?: string }; Returns: Json }
       get_staff_order: { Args: { p_order_id: string }; Returns: Json }
+      list_inventory: {
+        Args: {
+          p_limit?: number
+          p_low_only?: boolean
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: Json
+      }
       list_staff_orders: {
         Args: {
           p_before?: string
@@ -2976,6 +2986,7 @@ export type Database = {
         Returns: Json
       }
       pos_ship_order: { Args: { p_payload: Json }; Returns: Json }
+      pos_upsert_customer: { Args: { p_payload: Json }; Returns: Json }
       preview_checkout: {
         Args: {
           p_coupon_code?: string
@@ -3002,6 +3013,10 @@ export type Database = {
       release_cart_stock: { Args: { p_token?: string }; Returns: number }
       release_expired_reservations: { Args: never; Returns: number }
       reserve_cart_stock: { Args: { p_token: string }; Returns: Json }
+      search_customers: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: Json
+      }
       search_products: {
         Args: {
           p_category_slug?: string

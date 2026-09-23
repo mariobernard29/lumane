@@ -44,6 +44,7 @@ export default function Venta() {
     orderNumber: string
     orderId: string
     changeCents: number
+    correo: string | null
   } | null>(null)
   const campo = useRef<TextInput>(null)
 
@@ -195,6 +196,8 @@ export default function Venta() {
           onCancelar={() => setCobrando(false)}
           onCobrada={(orderNumber, orderId, changeCents) => {
             setCobrando(false)
+            // Se lee ANTES del reset, que borra la clienta del carrito.
+            const correo = carrito.customer?.email ?? null
             // El carrito se vacía AQUÍ, no al cerrar la hoja siguiente: la
             // venta ya está registrada y cobrada, así que dejarla en pantalla
             // invitaría a cobrarla otra vez. `reset()` estrena client_uuid.
@@ -203,7 +206,7 @@ export default function Venta() {
             // El turno cambia de saldo con cada venta en efectivo; releerlo
             // mantiene sincronizado lo que el módulo de caja va a mostrar.
             void refresh()
-            setCobrada({ orderNumber, orderId, changeCents })
+            setCobrada({ orderNumber, orderId, changeCents, correo })
           }}
         />
       ) : null}
@@ -213,6 +216,7 @@ export default function Venta() {
           orderId={cobrada.orderId}
           orderNumber={cobrada.orderNumber}
           changeCents={cobrada.changeCents}
+          correoSugerido={cobrada.correo}
           onClose={() => {
             setCobrada(null)
             // El foco vuelve al buscador al cerrar, no antes: es lo que permite

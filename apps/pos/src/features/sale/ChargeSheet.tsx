@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
+import { CustomerPicker } from '@/features/customers/CustomerPicker'
 import { color, s, size, space, text } from '@/theme'
 
 /**
@@ -54,6 +55,7 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
   const [referencia, setReferencia] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
+  const [eligiendoClienta, setEligiendoClienta] = useState(false)
 
   const resumen = useMemo(() => summarizePayments(pagos, total), [pagos, total])
   const atajos = useMemo(() => cashShortcuts(resumen.dueCents), [resumen.dueCents])
@@ -153,6 +155,24 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
         disabled: !resumen.isSettled && !puedeAñadir,
       }}
     >
+      {/* La clienta va arriba y es opcional. Asociarla sirve para el ticket por
+          correo y para su historial; el 90 % de las ventas del mostrador no la
+          lleva, así que no estorba el camino corto. */}
+      <Pressable
+        onPress={() => setEligiendoClienta(true)}
+        accessibilityRole="button"
+        accessibilityLabel={carrito.customer ? `Cambiar de clienta, ahora ${carrito.customer.nombre}` : 'Asociar una clienta'}
+        style={({ pressed }) => [c.clienta, pressed && c.clientaPulsada]}
+      >
+        <View style={s.fill}>
+          <Text style={s.label}>Clienta</Text>
+          <Text style={carrito.customer ? s.body : s.bodyMuted}>
+            {carrito.customer ? carrito.customer.nombre : 'Sin asociar'}
+          </Text>
+        </View>
+        <Text style={s.label}>{carrito.customer ? 'Cambiar' : 'Buscar'}</Text>
+      </Pressable>
+
       {pagos.length > 0 ? (
         <View style={c.bloque}>
           {pagos.map((p, i) => (
@@ -262,11 +282,27 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
         </>
       ) : null}
 
+      {eligiendoClienta ? (
+        <CustomerPicker
+          onClose={() => setEligiendoClienta(false)}
+          onElegida={(id, nombre, email) => carrito.setCustomer({ id, nombre, email })}
+        />
+      ) : null}
     </Sheet>
   )
 }
 
 const c = StyleSheet.create({
+  clienta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.gutter,
+    minHeight: size.touchMin,
+    paddingHorizontal: space.gutter,
+    borderWidth: 1,
+    borderColor: color['outline-variant'],
+  },
+  clientaPulsada: { backgroundColor: color['vellum-neutral'] },
   bloque: { gap: space.gap },
   medios: { flexDirection: 'row', gap: space.gap },
   medio: {
