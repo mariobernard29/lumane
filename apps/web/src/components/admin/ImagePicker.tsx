@@ -16,9 +16,10 @@ import { createBrowserSupabase } from '@/lib/supabase/client'
  * de Storage cada dos fotos, justo cuando está cargando el catálogo entero.
  *
  * Además convierte a WebP, que para una foto de prenda pesa entre un tercio y
- * la mitad que el JPEG original sin diferencia visible. La transformación por
- * tamaños la sigue haciendo Supabase al servir; esto solo evita guardar un
- * original absurdo.
+ * la mitad que el JPEG original sin diferencia visible. Y encoger AQUÍ es la
+ * única reducción que hay: la transformación en servidor de Supabase es un
+ * complemento de pago que este proyecto no tiene, así que lo que se suba es lo
+ * que se sirve. En la web, `next/image` vuelve a redimensionar por su cuenta.
  *
  * **Sube directo desde el navegador**, no por Server Action: pasar el archivo
  * por el servidor de Next para que él lo reenvíe es doble tránsito. La
@@ -113,7 +114,7 @@ export function ImagePicker({
         <div className="relative size-28 shrink-0 border border-outline-variant bg-surface">
           {valor ? (
             <Image
-              src={storageUrl(valor, bucket, { width: 220 })}
+              src={storageUrl(valor, bucket)}
               alt=""
               fill
               sizes="112px"

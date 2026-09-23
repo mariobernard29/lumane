@@ -334,7 +334,7 @@ export function Ficha({
             >
               <div className="relative size-20 shrink-0 bg-surface">
                 <Image
-                  src={storageUrl(f.storage_path, BUCKETS.products, { width: 160 })}
+                  src={storageUrl(f.storage_path, BUCKETS.products)}
                   alt=""
                   fill
                   sizes="80px"

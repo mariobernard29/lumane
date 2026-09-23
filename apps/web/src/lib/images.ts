@@ -1,30 +1,31 @@
-import { BUCKETS, imageUrl, type BucketName, type ImageTransform } from '@lumane/db'
+import { BUCKETS, imageUrl, type BucketName } from '@lumane/db'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
 /**
  * Convierte el `storage_path` guardado en la base en una URL servible.
  *
- * La transformación ocurre en el servidor de Supabase, así que una sola imagen
- * de origen cubre todos los tamaños del `srcset` sin subir variantes.
+ * Devuelve el objeto tal cual: la transformación en servidor de Supabase es un
+ * complemento de pago que este proyecto no tiene. Quien la necesite la resuelve
+ * por su cuenta — la web con `next/image`, que además ya lo hacía.
  */
 export function storageUrl(
   path: string | null | undefined,
   bucket: BucketName = BUCKETS.products,
-  transform?: ImageTransform,
 ): string {
   if (!path) return PLACEHOLDER
 
   // Escape hatch deliberado: una ruta que empieza por "/" es un recurso local
-  // de `public/`. Lo usa la siembra inicial —las doce fotos del prototipo, que
-  // aún no están en Storage— y el logotipo, que no tiene por qué viajar por el
-  // endpoint de transformación. El día que esas imágenes se suban al bucket,
-  // solo cambia el valor de la columna: ni una línea de este archivo.
+  // de `public/`. Es lo que permitió que las doce fotos del prototipo
+  // funcionaran durante meses sin Storage, y lo que hizo que migrarlas fuera
+  // solo cambiar el valor de una columna, sin tocar una línea de aquí. Lo
+  // siguen usando el logotipo y cualquier recurso que no tenga por qué
+  // viajar por la red.
   if (path.startsWith('/') || path.startsWith('http') || path.startsWith('data:')) {
     return path
   }
 
-  return imageUrl(SUPABASE_URL, path, bucket, transform)
+  return imageUrl(SUPABASE_URL, path, bucket)
 }
 
 /**

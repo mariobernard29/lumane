@@ -18,34 +18,36 @@ export const BUCKETS = {
 
 export type BucketName = (typeof BUCKETS)[keyof typeof BUCKETS]
 
-export interface ImageTransform {
-  width?: number
-  height?: number
-  /** 20–100. Por debajo de 70 el grano del prototipo se ve sucio. */
-  quality?: number
-  resize?: 'cover' | 'contain' | 'fill'
-}
-
 /**
- * URL pública con transformación en el servidor de Supabase. Una sola imagen
- * de origen sirve todos los tamaños del `srcset`, así que no hay que subir
- * variantes ni regenerarlas cuando cambia el diseño.
+ * URL pública del objeto.
+ *
+ * **Esto apuntaba al endpoint de transformación de Supabase**
+ * (`/render/image/public/...?width=…`) desde la Fase 0, y nunca se ejecutó
+ * porque todas las imágenes vivían en `public/` de Next. Al migrarlas a
+ * Storage, ese endpoint respondió:
+ *
+ *     403 {"error":"FeatureNotEnabled","message":"feature not enabled for this tenant"}
+ *
+ * La transformación de imágenes es un **complemento de pago** de Supabase que
+ * este proyecto no tiene. Se sirve el objeto tal cual.
+ *
+ * No se pierde casi nada: la web pinta todas sus imágenes con `next/image`,
+ * que ya redimensiona y sirve WebP desde su propio optimizador —así que la
+ * transformación de Supabase era trabajo duplicado—, y el panel encoge cada
+ * foto en el navegador antes de subirla, de modo que en el bucket no hay
+ * originales de cuatro megas.
+ *
+ * El día que se contrate el complemento, cambiar esta función a
+ * `/render/image/public/` y volver a aceptar tamaños es todo lo que hace falta.
  */
 export function imageUrl(
   supabaseUrl: string,
   path: string,
   bucket: BucketName = BUCKETS.products,
-  transform: ImageTransform = {},
 ): string {
   const base = supabaseUrl.replace(/\/$/, '')
-  const params = new URLSearchParams()
-  if (transform.width) params.set('width', String(transform.width))
-  if (transform.height) params.set('height', String(transform.height))
-  params.set('quality', String(transform.quality ?? 78))
-  if (transform.resize) params.set('resize', transform.resize)
-
   const clean = path.replace(/^\/+/, '')
-  return `${base}/storage/v1/render/image/public/${bucket}/${clean}?${params.toString()}`
+  return `${base}/storage/v1/object/public/${bucket}/${clean}`
 }
 
 /** Ruta canónica de una foto de producto. */

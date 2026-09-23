@@ -112,7 +112,7 @@ export default async function CatalogoPage({
               >
                 <div className="relative size-16 shrink-0 bg-surface">
                   <Image
-                    src={storageUrl(portada?.storage_path, BUCKETS.products, { width: 128 })}
+                    src={storageUrl(portada?.storage_path, BUCKETS.products)}
                     alt=""
                     fill
                     sizes="64px"

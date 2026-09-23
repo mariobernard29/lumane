@@ -15,6 +15,6 @@ export const config = {
    * y una redirección accidental haría que Stripe reintentara el cobro.
    */
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/webhooks|prototipo|logo-lumane|icon-lumane|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/webhooks|logo-lumane|icon-lumane|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)',
   ],
 }

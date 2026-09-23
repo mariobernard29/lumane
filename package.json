@@ -2,17 +2,21 @@
   "name": "lumane",
   "private": true,
   "packageManager": "pnpm@11.25.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "db:types": "supabase gen types typescript --project-id izyoixhffjjodzizkbqk --schema public > packages/db/src/database.types.ts"
+    "db:types": "supabase gen types typescript --project-id izyoixhffjjodzizkbqk --schema public > packages/db/src/database.types.ts",
+    "imagenes:prototipo": "node --experimental-strip-types scripts/subir-prototipo.ts"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "prettier": "^3.6.2",
     "turbo": "^2.5.8",
-    "typescript": "^5.9.3",
-    "prettier": "^3.6.2"
+    "typescript": "^5.9.3"
   }
 }
