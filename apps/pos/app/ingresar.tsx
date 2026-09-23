@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Image, KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Redirect } from 'expo-router'
 
 import { useSession } from '@/lib/session'
@@ -48,8 +48,17 @@ export default function Ingresar() {
     <KeyboardAvoidingView behavior="padding" style={s.screen}>
       <ScrollView contentContainerStyle={a.contenedor} keyboardShouldPersistTaps="handled">
         <View style={a.tarjeta}>
+          {/* El logotipo, no la palabra escrita con la tipografía de display.
+              Es la única pantalla que ve alguien que todavía no ha entrado, y
+              el trazo de la marca no se reproduce con una fuente. */}
+          <Image
+            source={require('../assets/logotipo-tinta.png')}
+            style={a.logotipo}
+            resizeMode="contain"
+            accessibilityRole="image"
+            accessibilityLabel="LUMANE"
+          />
           <Text style={[s.label, a.marca]}>Punto de venta</Text>
-          <Text style={[s.displayXl, a.titulo]}>LUMANE</Text>
 
           {notStaff ? (
             // Caso real: la propietaria prueba el POS con la cuenta que usa
@@ -121,8 +130,10 @@ const a = StyleSheet.create({
     borderColor: color.primary,
     padding: 32,
   },
-  marca: { marginBottom: 8 },
-  titulo: { marginBottom: 32 },
+  // El logotipo es 4398x1597 — proporción 2.75:1. La altura se fija y el ancho
+  // se deja al `resizeMode`, para que no se deforme si mañana cambia el arte.
+  logotipo: { width: 200, height: 73, marginBottom: 10 },
+  marca: { marginBottom: 32 },
   espacio: { height: space.gutter },
   aviso: { gap: 4 },
 })

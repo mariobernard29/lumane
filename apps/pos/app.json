@@ -12,7 +12,8 @@
     "android": {
       "package": "mx.lumane.pos",
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0A"
+        "foregroundImage": "./assets/monograma-tinta.png",
+        "backgroundColor": "#FFFFFF"
       },
       "permissions": [
         "android.permission.CAMERA",
@@ -36,6 +37,15 @@
           "cameraPermission": "Lumane usa la cámara para leer el código de barras de las prendas.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/monograma-hueso.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#0A0A0A"
+        }
       ]
     ],
     "experiments": {
@@ -51,6 +61,7 @@
     "updates": {
       "url": "https://u.expo.dev/222c1a7f-a731-4e81-8925-9c7812878ab8"
     },
-    "ios": {}
+    "ios": {},
+    "icon": "./assets/icono.png"
   }
 }

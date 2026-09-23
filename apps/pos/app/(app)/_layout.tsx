@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Redirect, Slot, usePathname, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -54,7 +54,15 @@ export default function AppLayout() {
     <SafeAreaView style={l.marco} edges={['top', 'bottom', 'left']}>
       <View style={l.carril}>
         <View style={l.marca}>
-          <Text style={[s.headlineSm, s.onDark]}>LUMANE</Text>
+          {/* Versión en hueso: el carril es negro editorial y el logotipo en
+              tinta sería invisible sobre él. */}
+          <Image
+            source={require('../../assets/logotipo-hueso.png')}
+            style={l.logotipo}
+            resizeMode="contain"
+            accessibilityRole="image"
+            accessibilityLabel="LUMANE"
+          />
           <Text style={[s.label, l.marcaPie]} numberOfLines={1}>
             {staff.location.code}
           </Text>
@@ -115,6 +123,9 @@ const l = StyleSheet.create({
     paddingVertical: space.gutter,
   },
   marca: { paddingHorizontal: space.gutter, paddingBottom: space.sectionSm },
+  // 136 px útiles en el carril (168 menos los dos gutter). 120 deja aire a los
+  // lados; la altura sale de la proporción 2.75:1 del arte.
+  logotipo: { width: 120, height: 44, marginBottom: 2 },
   marcaPie: { color: color['on-primary-container'], marginTop: 2 },
   modulos: { flex: 1, gap: 2 },
   modulo: {
