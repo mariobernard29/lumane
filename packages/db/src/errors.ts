@@ -24,6 +24,8 @@ export type LumaneErrorKind =
   | 'out_of_stock'
   /** Falta permiso para la acción. */
   | 'forbidden'
+  /** El pedido no puede saltar a ese estado: la interfaz debe releer el actual. */
+  | 'invalid_transition'
   /** El recurso no existe o caducó (carrito, pedido, cupón). */
   | 'not_found'
   | 'unknown'
@@ -32,6 +34,10 @@ export function classifyError(error: PostgrestLikeError | null | undefined): Lum
   if (!error) return 'unknown'
   if (error.hint === 'register_closed') return 'register_closed'
   if (error.hint === 'register_already_open') return 'register_already_open'
+  // Antes del `switch` a propósito: la máquina de estados lanza `check_violation`
+  // igual que el agotamiento de stock, y sin esta línea un salto de estado
+  // rechazado diría «alguna pieza ya no tiene inventario suficiente».
+  if (error.hint === 'transicion_invalida') return 'invalid_transition'
 
   switch (error.code) {
     case '23514': // check_violation
@@ -50,6 +56,7 @@ const FALLBACK: Record<LumaneErrorKind, string> = {
   register_already_open: 'Ya hay una caja abierta en esta sucursal.',
   out_of_stock: 'Alguna pieza ya no tiene inventario suficiente.',
   forbidden: 'No tienes permiso para esta acción.',
+  invalid_transition: 'Ese pedido ya cambió de estado. Vuelve a abrirlo para ver cómo está.',
   not_found: 'No encontramos lo que buscabas.',
   unknown: 'Algo salió mal. Vuelve a intentarlo.',
 }
