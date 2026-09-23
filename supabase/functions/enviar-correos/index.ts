@@ -63,7 +63,14 @@ async function mandarPorResend(
   }
 }
 
-async function procesar(ev: Evento): Promise<{ estado: 'enviado' | 'omitido'; detalle: string }> {
+interface Resultado {
+  estado: 'enviado' | 'omitido'
+  detalle: string
+  /** Identificador del envío en Resend. Solo cuando se mandó algo. */
+  ref?: string
+}
+
+async function procesar(ev: Evento): Promise<Resultado> {
   const orderId = ev.payload?.order_id as string | undefined
   if (!orderId) return { estado: 'omitido', detalle: `evento ${ev.topic} sin order_id` }
 
@@ -87,7 +94,7 @@ async function procesar(ev: Evento): Promise<{ estado: 'enviado' | 'omitido'; de
   }
 
   const id = await mandarPorResend(destinatario, correo.asunto, correo.html, correo.texto)
-  return { estado: 'enviado', detalle: `resend:${id}` }
+  return { estado: 'enviado', detalle: `resend:${id}`, ref: id }
 }
 
 Deno.serve(async () => {
@@ -111,7 +118,11 @@ Deno.serve(async () => {
     try {
       const r = await procesar(ev)
       if (r.estado === 'enviado') {
-        await supabase.rpc('outbox_mark_sent', { p_id: ev.id })
+        // La referencia se guarda en la misma llamada que cierra el evento: si
+        // se hiciera en dos pasos, un fallo entre ambos dejaría un correo
+        // enviado del que no queda rastro, que es precisamente lo que esta
+        // columna viene a evitar.
+        await supabase.rpc('outbox_mark_sent', { p_id: ev.id, p_provider_ref: r.ref ?? null })
         resumen.enviados++
         console.log(`[correos] ${ev.topic} ${ev.id} enviado (${r.detalle})`)
       } else {
