@@ -1,6 +1,3 @@
-// Generado desde el esquema de Supabase. No editar a mano.
-// Regenerar tras CADA migracion, o el editor creera que las columnas nuevas no existen.
-
 export type Json =
   | string
   | number
@@ -1421,6 +1418,7 @@ export type Database = {
           next_attempt_at: string
           payload: Json
           processed_at: string | null
+          provider_ref: string | null
           status: Database["public"]["Enums"]["outbox_status"]
           topic: string
         }
@@ -1432,6 +1430,7 @@ export type Database = {
           next_attempt_at?: string
           payload: Json
           processed_at?: string | null
+          provider_ref?: string | null
           status?: Database["public"]["Enums"]["outbox_status"]
           topic: string
         }
@@ -1443,6 +1442,7 @@ export type Database = {
           next_attempt_at?: string
           payload?: Json
           processed_at?: string | null
+          provider_ref?: string | null
           status?: Database["public"]["Enums"]["outbox_status"]
           topic?: string
         }
@@ -2870,6 +2870,10 @@ export type Database = {
         Args: { p_counts: Json; p_location_id?: string; p_note?: string }
         Returns: Json
       }
+      cancel_order: {
+        Args: { p_order_id: string; p_reason?: string }
+        Returns: Json
+      }
       close_register: {
         Args: {
           p_counted_cash_cents: number
@@ -2908,10 +2912,55 @@ export type Database = {
       }
       get_pos_sale: { Args: { p_order_id: string }; Returns: Json }
       get_register_summary: { Args: { p_session_id?: string }; Returns: Json }
+      get_staff_order: { Args: { p_order_id: string }; Returns: Json }
+      list_staff_orders: {
+        Args: {
+          p_before?: string
+          p_channel?: Database["public"]["Enums"]["order_channel"]
+          p_limit?: number
+          p_search?: string
+          p_status?: Database["public"]["Enums"]["order_status"][]
+        }
+        Returns: Json
+      }
       merge_cart: { Args: { p_token: string }; Returns: Json }
       open_register: {
         Args: { p_location_id?: string; p_opening_float_cents?: number }
         Returns: Json
+      }
+      order_email_payload: { Args: { p_order_id: string }; Returns: Json }
+      outbox_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          next_attempt_at: string
+          payload: Json
+          processed_at: string | null
+          provider_ref: string | null
+          status: Database["public"]["Enums"]["outbox_status"]
+          topic: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "outbox_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      outbox_mark_failed: {
+        Args: { p_error: string; p_id: string; p_max_attempts?: number }
+        Returns: undefined
+      }
+      outbox_mark_sent: {
+        Args: { p_id: string; p_provider_ref?: string }
+        Returns: undefined
+      }
+      outbox_mark_skipped: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
       }
       pos_create_return: { Args: { p_payload: Json }; Returns: Json }
       pos_create_sale: { Args: { p_payload: Json }; Returns: Json }
@@ -2919,6 +2968,7 @@ export type Database = {
         Args: { p_limit?: number; p_location_id?: string; p_query?: string }
         Returns: Json
       }
+      pos_ship_order: { Args: { p_payload: Json }; Returns: Json }
       preview_checkout: {
         Args: {
           p_coupon_code?: string
