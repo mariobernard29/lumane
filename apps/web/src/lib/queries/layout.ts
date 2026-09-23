@@ -34,11 +34,15 @@ export interface StoreChrome {
   }
 }
 
-const FOOTER_TITLES: Record<string, string> = {
-  footer_tienda: 'Tienda',
-  footer_ayuda: 'Ayuda',
-  footer_casa: 'La casa',
-}
+/**
+ * Los enlaces pequeños de la última línea del pie, no una columna.
+ *
+ * Es la única clave que el código sigue conociendo, y es estructura, no texto:
+ * ese menú se pinta en otro sitio y con otra forma. Todo lo demás —qué
+ * columnas hay, cómo se llaman y en qué orden— sale de `navigation_menus`
+ * desde la migración 0052.
+ */
+const MENU_LEGAL = 'footer_legal'
 
 export const getStoreChrome = cache(async (): Promise<StoreChrome> => {
   const supabase = await createServerSupabase()
@@ -46,7 +50,7 @@ export const getStoreChrome = cache(async (): Promise<StoreChrome> => {
   const [menusResult, settingsResult] = await Promise.all([
     supabase
       .from('navigation_menus')
-      .select('key, name, navigation_items(id, label, href, position, is_emphasized, is_visible)')
+      .select('key, name, position, navigation_items(id, label, href, position, is_emphasized, is_visible)')
       .order('position', { referencedTable: 'navigation_items' }),
     supabase.from('store_settings').select('*').single(),
   ])
@@ -66,15 +70,19 @@ export const getStoreChrome = cache(async (): Promise<StoreChrome> => {
     isEmphasized: i.is_emphasized,
   }))
 
-  const footerColumns: FooterColumn[] = Object.entries(FOOTER_TITLES)
-    .map(([key, title]) => ({
-      key,
-      title,
-      links: itemsOf(key).map((i) => ({ id: i.id, label: i.label, href: i.href })),
+  // Columna del pie = cualquier menú con prefijo `footer_` que no sea el legal.
+  // Así añadir una cuarta columna es insertar una fila, no desplegar.
+  const footerColumns: FooterColumn[] = menus
+    .filter((m) => m.key.startsWith('footer_') && m.key !== MENU_LEGAL)
+    .sort((a, b) => a.position - b.position)
+    .map((m) => ({
+      key: m.key,
+      title: m.name,
+      links: itemsOf(m.key).map((i) => ({ id: i.id, label: i.label, href: i.href })),
     }))
     .filter((column) => column.links.length > 0)
 
-  const legalLinks: FooterLink[] = itemsOf('footer_legal').map((i) => ({
+  const legalLinks: FooterLink[] = itemsOf(MENU_LEGAL).map((i) => ({
     id: i.id,
     label: i.label,
     href: i.href,
