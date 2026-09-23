@@ -6,14 +6,9 @@
     "orientation": "landscape",
     "scheme": "lumanepos",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "platforms": [
       "android"
     ],
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#0A0A0A"
-    },
     "android": {
       "package": "mx.lumane.pos",
       "adaptiveIcon": {
@@ -40,6 +35,12 @@
         {
           "cameraPermission": "Lumane usa la cámara para leer el código de barras de las prendas.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A0A0A"
         }
       ]
     ],
