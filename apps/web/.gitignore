@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files. La plantilla SÍ se sube: sin ella, el README manda a copiar un
+# archivo que en un clon nuevo no existe.
 .env*
+!.env.example
 
 # vercel
 .vercel
