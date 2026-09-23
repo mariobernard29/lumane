@@ -2,6 +2,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'rea
 import { Redirect, Slot, usePathname, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { OrdersProvider, useOrders } from '@/features/orders/OrdersContext'
 import { useSession } from '@/lib/session'
 import { color, s, size, space, text } from '@/theme'
 
@@ -23,20 +24,25 @@ interface Modulo {
   label: string
   /** Sin este permiso el módulo no se pinta: no se ofrecen callejones sin salida. */
   permission: string
+  /** Pinta el número de pedidos que esperan. Solo Pedidos lo lleva. */
+  contador?: true
 }
 
 const MODULOS: Modulo[] = [
   { href: '/venta', label: 'Venta', permission: 'sales.create' },
   { href: '/caja', label: 'Caja', permission: 'register.open' },
-  { href: '/pedidos', label: 'Pedidos', permission: 'orders.read' },
+  { href: '/pedidos', label: 'Pedidos', permission: 'orders.read', contador: true },
   { href: '/inventario', label: 'Inventario', permission: 'inventory.read' },
   { href: '/clientes', label: 'Clientes', permission: 'customers.read' },
 ]
 
+/**
+ * La guarda y el proveedor. El marco va aparte porque `useOrders()` tiene que
+ * leerse POR DEBAJO de `OrdersProvider`, y un componente no puede consumir un
+ * contexto que él mismo monta.
+ */
 export default function AppLayout() {
-  const { loading, staff, can, signOut } = useSession()
-  const router = useRouter()
-  const pathname = usePathname()
+  const { loading, staff } = useSession()
 
   if (loading) {
     return (
@@ -47,6 +53,22 @@ export default function AppLayout() {
   }
 
   if (!staff) return <Redirect href="/ingresar" />
+
+  return (
+    <OrdersProvider>
+      <Marco />
+    </OrdersProvider>
+  )
+}
+
+function Marco() {
+  const { staff, can, signOut } = useSession()
+  const { pendientes } = useOrders()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // `AppLayout` ya garantizó que hay sesión; esto solo estrecha el tipo.
+  if (!staff) return null
 
   const visibles = MODULOS.filter((m) => can(m.permission))
 
@@ -84,6 +106,14 @@ export default function AppLayout() {
                 ]}
               >
                 <Text style={[l.moduloTexto, activo && l.moduloTextoActivo]}>{modulo.label}</Text>
+                {/* El contador solo aparece cuando hay algo que atender: un «0»
+                    permanente en el carril se vuelve invisible a los dos días y
+                    deja de avisar cuando de verdad importa. */}
+                {modulo.contador && pendientes > 0 ? (
+                  <View style={l.globo}>
+                    <Text style={l.globoTexto}>{pendientes}</Text>
+                  </View>
+                ) : null}
               </Pressable>
             )
           })}
@@ -130,11 +160,24 @@ const l = StyleSheet.create({
   modulos: { flex: 1, gap: 2 },
   modulo: {
     minHeight: size.touchMin,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.gap,
     paddingHorizontal: space.gutter,
     borderLeftWidth: 3,
     borderLeftColor: 'transparent',
   },
+  // Relleno claro sobre el carril negro: es el único elemento del POS que
+  // tiene que verse de reojo desde el otro lado del mostrador.
+  globo: {
+    minWidth: 22,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    alignItems: 'center',
+    backgroundColor: color['on-primary'],
+  },
+  globoTexto: { ...text.labelUpper, fontSize: 11, color: color['editorial-ink'] },
   moduloActivo: {
     backgroundColor: color['on-primary-fixed-variant'],
     borderLeftColor: color['on-primary'],

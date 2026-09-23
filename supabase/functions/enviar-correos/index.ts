@@ -80,9 +80,15 @@ async function procesar(ev: Evento): Promise<Resultado> {
 
   const c = carga as Carga
 
-  // Una venta de mostrador sin clienta asociada no tiene a quién escribirle.
-  // No es un error del worker: es lo normal en el 90 % de las ventas del POS.
-  const destinatario = c.customer?.email?.trim()
+  // El correo del evento manda sobre el de la ficha: un ticket se pide con una
+  // dirección concreta —la que la clienta dictó en el mostrador— y puede no ser
+  // la que tiene guardada, o puede que no tenga ninguna.
+  //
+  // Para el resto de eventos no hay `email` en la carga y se usa el de la
+  // ficha. Una venta de mostrador sin clienta no tiene a quién escribirle, y
+  // eso no es un error del worker: es lo normal en el mostrador.
+  const delEvento = (ev.payload?.email as string | undefined)?.trim()
+  const destinatario = delEvento || c.customer?.email?.trim()
   if (!destinatario) return { estado: 'omitido', detalle: `pedido ${c.order.number} sin correo de clienta` }
 
   const correo = plantillaPara(ev.topic, (ev.payload?.to_status as string) ?? null, c)

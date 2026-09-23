@@ -13,6 +13,7 @@ import { formatPrice, lineTotalCents, type SaleLine } from '@lumane/core'
 import { useSaleCart } from '@/features/sale/useSaleCart'
 import { useVariantSearch, type VariantHit } from '@/features/sale/useVariantSearch'
 import { ChargeSheet } from '@/features/sale/ChargeSheet'
+import { SaleDoneSheet } from '@/features/receipt/SaleDoneSheet'
 import { useSession, useStaff } from '@/lib/session'
 import { Button } from '@/ui/Button'
 import { color, s, size, space, text } from '@/theme'
@@ -38,6 +39,12 @@ export default function Venta() {
   const { results, loading, error, buscarYa } = useVariantSearch(query)
   const carrito = useSaleCart()
   const [cobrando, setCobrando] = useState(false)
+  /** La venta recién registrada, mientras su hoja de cierre está abierta. */
+  const [cobrada, setCobrada] = useState<{
+    orderNumber: string
+    orderId: string
+    changeCents: number
+  } | null>(null)
   const campo = useRef<TextInput>(null)
 
   const hayTurno = staff.open_session !== null
@@ -186,13 +193,30 @@ export default function Venta() {
         <ChargeSheet
           carrito={carrito}
           onCancelar={() => setCobrando(false)}
-          onCobrada={() => {
+          onCobrada={(orderNumber, orderId, changeCents) => {
             setCobrando(false)
+            // El carrito se vacía AQUÍ, no al cerrar la hoja siguiente: la
+            // venta ya está registrada y cobrada, así que dejarla en pantalla
+            // invitaría a cobrarla otra vez. `reset()` estrena client_uuid.
             carrito.reset()
             setQuery('')
             // El turno cambia de saldo con cada venta en efectivo; releerlo
             // mantiene sincronizado lo que el módulo de caja va a mostrar.
             void refresh()
+            setCobrada({ orderNumber, orderId, changeCents })
+          }}
+        />
+      ) : null}
+
+      {cobrada ? (
+        <SaleDoneSheet
+          orderId={cobrada.orderId}
+          orderNumber={cobrada.orderNumber}
+          changeCents={cobrada.changeCents}
+          onClose={() => {
+            setCobrada(null)
+            // El foco vuelve al buscador al cerrar, no antes: es lo que permite
+            // encadenar la siguiente venta con el escáner sin tocar la pantalla.
             campo.current?.focus()
           }}
         />

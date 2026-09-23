@@ -41,7 +41,8 @@ const MEDIOS: { key: PaymentMethod; label: string }[] = [
 interface Props {
   carrito: ReturnType<typeof useSaleCart>
   onCancelar: () => void
-  onCobrada: (orderNumber: string, orderId: string) => void
+  /** El cambio lo da la BASE, no el cálculo del cliente: es el que se entrega. */
+  onCobrada: (orderNumber: string, orderId: string, changeCents: number) => void
 }
 
 export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
@@ -131,8 +132,11 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
       return
     }
 
-    const venta = data as unknown as { order: { id: string; order_number: string } }
-    onCobrada(venta.order.order_number, venta.order.id)
+    const venta = data as unknown as {
+      order: { id: string; order_number: string }
+      change_cents: number | string | null
+    }
+    onCobrada(venta.order.order_number, venta.order.id, Number(venta.change_cents ?? 0))
   }
 
   return (

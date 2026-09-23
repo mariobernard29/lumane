@@ -2968,6 +2968,10 @@ export type Database = {
         Args: { p_limit?: number; p_location_id?: string; p_query?: string }
         Returns: Json
       }
+      pos_send_receipt: {
+        Args: { p_email?: string; p_order_id: string }
+        Returns: Json
+      }
       pos_ship_order: { Args: { p_payload: Json }; Returns: Json }
       preview_checkout: {
         Args: {

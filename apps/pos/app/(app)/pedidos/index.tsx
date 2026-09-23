@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { formatPrice } from '@lumane/core'
 
 import { OrderSheet } from '@/features/orders/OrderSheet'
+import { useOrders } from '@/features/orders/OrdersContext'
 import { PENDIENTES, etiqueta, type OrderStatus } from '@/features/orders/estados'
 import { useStaffOrders, type OrderRow } from '@/features/orders/useStaffOrders'
 import { Chip } from '@/ui/Chip'
@@ -51,6 +52,7 @@ export default function Pedidos() {
   const [filtro, setFiltro] = useState<Filtro>(FILTROS[0]!)
   const [busqueda, setBusqueda] = useState('')
   const [abierto, setAbierto] = useState<string | null>(null)
+  const { refrescar } = useOrders()
 
   const { rows, cargando, error, recargar } = useStaffOrders({
     channel: 'online',
@@ -122,7 +124,17 @@ export default function Pedidos() {
       )}
 
       {abierto ? (
-        <OrderSheet orderId={abierto} onClose={() => setAbierto(null)} onCambio={() => void recargar()} />
+        <OrderSheet
+          orderId={abierto}
+          onClose={() => setAbierto(null)}
+          onCambio={() => {
+            // La lista y el contador del carril, los dos: si solo se recargara
+            // la lista, el número del carril seguiría contando un pedido que
+            // la encargada acaba de atender hasta el siguiente sondeo.
+            void recargar()
+            void refrescar()
+          }}
+        />
       ) : null}
     </View>
   )

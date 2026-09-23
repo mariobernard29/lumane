@@ -45,10 +45,24 @@ export interface Pedido {
   note: string | null
 }
 
+export interface Pago {
+  method: string
+  amount_cents: number
+  tendered_cents: number | null
+  change_cents: number | null
+  reference: string | null
+}
+
 export interface Carga {
   order: Pedido
   customer: { first_name: string | null; last_name: string | null; email: string | null } | null
   lines: Linea[]
+  /** Solo los pagos positivos: los negativos son reembolsos de devoluciones. */
+  payments: Pago[]
+  change_cents: number | null
+  location: { name: string | null; code: string | null; phone: string | null } | null
+  /** Quién cobró. En un mostrador con turnos, un ticket sin nombre no se reclama. */
+  cashier: { full_name: string | null } | null
   shipment: {
     carrier: string | null
     tracking_number: string | null
@@ -268,6 +282,102 @@ function armar(titulo: string, entradilla: string, c: Carga, extra = ''): Correo
 }
 
 /**
+ * El ticket de una venta de mostrador.
+ *
+ * **El orden de las líneas es el mismo que el de `buildSaleTicket`** en
+ * `@lumane/core`: cabecera, datos de la venta, piezas, totales con el IVA
+ * informado como incluido, medios de pago, cambio. El día que llegue la
+ * impresora, el papel y el correo tienen que leerse igual — si no, la clienta
+ * que compara los dos cree que uno de ellos miente.
+ */
+const NOMBRE_MEDIO: Record<string, string> = {
+  cash: 'Efectivo',
+  card: 'Tarjeta',
+  transfer: 'Transferencia',
+  store_credit: 'Saldo a favor',
+  stripe: 'Tarjeta',
+}
+
+function ticketVenta(c: Carga): Correo {
+  const o = c.order
+  const cambio = Number(c.change_cents ?? 0)
+
+  const datos = `
+  <tr><td style="padding:24px 40px 0 40px;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      ${[
+        ['Ticket', esc(o.number)],
+        ['Fecha', esc(fecha(o.placed_at))],
+        ['Atendió', esc(c.cashier?.full_name ?? '—')],
+        ...(c.location?.name ? [['Sucursal', esc(c.location.name)]] : []),
+      ]
+        .map(
+          ([k, v]) => `
+        <tr>
+          <td style="padding:3px 0;font-family:${TEXTO};font-size:13px;color:${TENUE};">${k}</td>
+          <td style="padding:3px 0;font-family:${TEXTO};font-size:13px;color:${TINTA};text-align:right;">${v}</td>
+        </tr>`,
+        )
+        .join('')}
+    </table>
+  </td></tr>`
+
+  const pagos = `
+  <tr><td style="padding:18px 40px 0 40px;">
+    <div style="padding-top:14px;border-top:1px solid ${LINEA};">
+      <div style="font-family:${TEXTO};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${TENUE};margin-bottom:8px;">Pago</div>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        ${c.payments
+          .map(
+            (p) => `
+          <tr>
+            <td style="padding:3px 0;font-family:${TEXTO};font-size:14px;color:${TINTA};">${esc(NOMBRE_MEDIO[p.method] ?? p.method)}</td>
+            <td style="padding:3px 0;font-family:${TEXTO};font-size:14px;color:${TINTA};text-align:right;">${esc(pesos(p.amount_cents))}</td>
+          </tr>
+          ${
+            p.tendered_cents != null && Number(p.tendered_cents) > Number(p.amount_cents)
+              ? `<tr>
+                   <td style="padding:2px 0;font-family:${TEXTO};font-size:13px;color:${TENUE};">Recibido</td>
+                   <td style="padding:2px 0;font-family:${TEXTO};font-size:13px;color:${TENUE};text-align:right;">${esc(pesos(p.tendered_cents))}</td>
+                 </tr>`
+              : ''
+          }`,
+          )
+          .join('')}
+        ${
+          cambio > 0
+            ? `<tr>
+                 <td style="padding:6px 0 0 0;font-family:${TEXTO};font-size:15px;font-weight:600;color:${TINTA};">Cambio</td>
+                 <td style="padding:6px 0 0 0;font-family:${TEXTO};font-size:15px;font-weight:600;color:${TINTA};text-align:right;">${esc(pesos(cambio))}</td>
+               </tr>`
+            : ''
+        }
+      </table>
+    </div>
+  </td></tr>`
+
+  const contenido = `
+    ${cabecera('Gracias por tu compra', 'Aquí tienes tu ticket. Guárdalo: es lo que necesitas para un cambio o una devolución.')}
+    ${datos}
+    <tr><td style="padding:18px 40px 0 40px;">
+      ${tablaLineas(c.lines)}
+      ${totales(o)}
+    </td></tr>
+    ${pagos}
+    <tr><td style="height:36px;"></td></tr>`
+
+  return {
+    asunto: `Tu ticket ${o.number} · LUMANE`,
+    html: envoltorio(contenido, c.store),
+    texto: aTexto(
+      'Gracias por tu compra',
+      'Guarda este ticket: es lo que necesitas para un cambio o una devolución.',
+      c,
+    ),
+  }
+}
+
+/**
  * Devuelve `null` cuando el evento no merece correo. Es una respuesta válida,
  * no un fallo: `packed` y `completed` son estados internos del mostrador y
  * avisar de ellos sería ruido que enseña a la clienta a ignorar los correos de
@@ -276,6 +386,10 @@ function armar(titulo: string, entradilla: string, c: Carga, extra = ''): Correo
 export function plantillaPara(topic: string, aEstado: string | null, c: Carga): Correo | null {
   const nombre = c.customer?.first_name?.trim() || 'Hola'
   const saludo = nombre === 'Hola' ? 'Hola' : `Hola, ${nombre}`
+
+  // El ticket se pide a mano desde el mostrador, no lo dispara un cambio de
+  // estado: por eso entra antes que el resto y no mira `aEstado`.
+  if (topic === 'sale.receipt') return ticketVenta(c)
 
   if (topic === 'order.placed') {
     const correo = armar(
