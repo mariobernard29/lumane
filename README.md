@@ -52,6 +52,24 @@ pnpm --filter @lumane/web dev
 
 - **Fase 0 · Cimientos** — completa: monorepo, tokens, esquema con RLS,
   motor de precios, RPC de venta y checkout, siembra del catálogo.
-- **Fase 1 · Tienda en línea** — portada, catálogo con filtros, ficha de producto,
-  carrito, checkout, área de clienta y páginas de contenido terminados.
-  Falta activar el pago con tarjeta (Stripe) y el envío de correos (Resend).
+- **Fase 1 · Tienda en línea** — completa: portada, catálogo con filtros, ficha
+  de producto, carrito, checkout, área de clienta y páginas de contenido.
+  El pago con tarjeta y los correos están activos y probados de punta a punta
+  con una compra real. Falta la cotización de envío por distancia, que espera
+  las dos llaves de Google Maps.
+- **Fase 2 · El POS** — a medias. Acceso del personal, venta y caja funcionan
+  en la tablet, con APK autónomo y actualizaciones por aire. Faltan la bandeja
+  de pedidos en línea, las devoluciones y el transporte Bluetooth de la
+  impresión, que necesita una impresora física con la que probar.
+
+### Los correos
+
+Van por el patrón de outbox que dejó la Fase 0: el trigger sobre
+`order_status_events` escribe el evento en la misma transacción que el pedido,
+y la Edge Function `enviar-correos` lo consume. Postgres decide a quién se
+escribe, con qué datos y cuándo se reintenta; Deno solo transporta. Si Resend
+se cae, el pedido ya está guardado y el correo se reintenta con espera
+creciente. Si Deno se cae, el evento sigue en la tabla.
+
+`pg_cron` la invoca cada minuto, sacando la llave de Vault — nunca escrita en
+el texto del trabajo, que `cron.job` guarda en claro.
