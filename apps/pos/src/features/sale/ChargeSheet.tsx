@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import {
   cashShortcuts,
   formatPrice,
@@ -13,7 +13,8 @@ import type { useSaleCart } from './useSaleCart.ts'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
-import { color, elevation, s, size, space, text } from '@/theme'
+import { Sheet } from '@/ui/Sheet'
+import { color, s, size, space, text } from '@/theme'
 
 /**
  * El cobro.
@@ -135,169 +136,133 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
   }
 
   return (
-    <Modal transparent animationType="slide" onRequestClose={onCancelar}>
-      <View style={c.fondo}>
-        <Pressable style={s.fill} onPress={onCancelar} accessibilityLabel="Cerrar el cobro" />
-
-        <View style={[c.hoja, elevation]}>
-          <View style={c.cabecera}>
-            <View>
-              <Text style={s.label}>Cobrar</Text>
-              <Text style={s.priceDisplay}>{formatPrice(total, true)}</Text>
+    <Sheet
+      eyebrow="Cobrar"
+      title={formatPrice(total, true)}
+      titleIsMoney
+      onClose={onCancelar}
+      error={error}
+      action={{
+        label: enviando ? 'Registrando…' : 'Cobrar y registrar',
+        onPress: () => void cobrar(),
+        loading: enviando,
+        disabled: !resumen.isSettled && !puedeAñadir,
+      }}
+    >
+      {pagos.length > 0 ? (
+        <View style={c.bloque}>
+          {pagos.map((p, i) => (
+            <View key={`${p.method}-${i}`} style={s.rowBetween}>
+              <Text style={s.body}>
+                {MEDIOS.find((m) => m.key === p.method)?.label ?? p.method}
+              </Text>
+              <View style={s.row}>
+                <Text style={s.price}>{formatPrice(p.amountCents, true)}</Text>
+                <Pressable
+                  onPress={() => setPagos((a) => a.filter((_, j) => j !== i))}
+                  accessibilityLabel="Quitar este pago"
+                  style={c.quitar}
+                >
+                  <Text style={c.quitarTexto}>Quitar</Text>
+                </Pressable>
+              </View>
             </View>
-            <Button label="Volver" variant="subtle" onPress={onCancelar} />
-          </View>
-
-          <ScrollView contentContainerStyle={c.cuerpo} keyboardShouldPersistTaps="handled">
-            {pagos.length > 0 ? (
-              <View style={c.bloque}>
-                {pagos.map((p, i) => (
-                  <View key={`${p.method}-${i}`} style={s.rowBetween}>
-                    <Text style={s.body}>
-                      {MEDIOS.find((m) => m.key === p.method)?.label ?? p.method}
-                    </Text>
-                    <View style={s.row}>
-                      <Text style={s.price}>{formatPrice(p.amountCents, true)}</Text>
-                      <Pressable
-                        onPress={() => setPagos((a) => a.filter((_, j) => j !== i))}
-                        accessibilityLabel="Quitar este pago"
-                        style={c.quitar}
-                      >
-                        <Text style={c.quitarTexto}>Quitar</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ))}
-                <View style={s.rule} />
-                <View style={s.rowBetween}>
-                  <Text style={s.label}>Falta</Text>
-                  <Text style={s.price}>{formatPrice(resumen.dueCents, true)}</Text>
-                </View>
-              </View>
-            ) : null}
-
-            {resumen.dueCents > 0 ? (
-              <>
-                <View style={c.medios}>
-                  {MEDIOS.map((m) => (
-                    <Pressable
-                      key={m.key}
-                      onPress={() => {
-                        setMedio(m.key)
-                        setRecibido('')
-                        setReferencia('')
-                      }}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: medio === m.key }}
-                      style={[c.medio, medio === m.key && c.medioActivo]}
-                    >
-                      <Text style={medio === m.key ? s.labelStrong : s.label}>{m.label}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-
-                {esEfectivo ? (
-                  <View style={c.bloque}>
-                    <View style={c.atajos}>
-                      {atajos.map((cents) => (
-                        <Pressable
-                          key={cents}
-                          onPress={() => setRecibido((cents / 100).toFixed(2))}
-                          style={c.atajo}
-                          accessibilityRole="button"
-                        >
-                          <Text style={s.body}>{formatPrice(cents)}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-
-                    <Field
-                      label="Recibido"
-                      value={recibido}
-                      onChangeText={setRecibido}
-                      keyboardType="decimal-pad"
-                      inputMode="decimal"
-                      placeholder={(resumen.dueCents / 100).toFixed(2)}
-                    />
-
-                    {recibidoCents != null && recibidoCents > resumen.dueCents ? (
-                      <View style={c.cambio}>
-                        <Text style={s.label}>Cambio</Text>
-                        <Text style={s.priceDisplay}>
-                          {formatPrice(recibidoCents - resumen.dueCents, true)}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : (
-                  <View style={c.bloque}>
-                    <View style={s.rowBetween}>
-                      <Text style={s.bodyMuted}>Importe</Text>
-                      <Text style={s.price}>{formatPrice(resumen.dueCents, true)}</Text>
-                    </View>
-                    <Field
-                      label="Referencia (opcional)"
-                      value={referencia}
-                      onChangeText={setReferencia}
-                      autoCapitalize="characters"
-                      placeholder={medio === 'card' ? 'Autorización' : 'Folio'}
-                    />
-                  </View>
-                )}
-
-                {/* Solo se ofrece partir el pago cuando el medio actual no
-                    cubre el total: en una venta normal el botón no aparece y
-                    no hay nada que decidir. */}
-                {esEfectivo && recibidoCents != null && recibidoCents < resumen.dueCents ? (
-                  <Button
-                    label={`Añadir ${formatPrice(recibidoCents, true)} y pagar el resto con otro medio`}
-                    variant="outline"
-                    onPress={añadirPago}
-                  />
-                ) : null}
-              </>
-            ) : null}
-
-            {error ? (
-              <View style={c.error}>
-                <Text style={s.body}>{error}</Text>
-              </View>
-            ) : null}
-          </ScrollView>
-
-          <View style={c.pie}>
-            <Button
-              label={enviando ? 'Registrando…' : 'Cobrar y registrar'}
-              size="charge"
-              fullWidth
-              loading={enviando}
-              disabled={!resumen.isSettled && !puedeAñadir}
-              onPress={() => void cobrar()}
-            />
+          ))}
+          <View style={s.rule} />
+          <View style={s.rowBetween}>
+            <Text style={s.label}>Falta</Text>
+            <Text style={s.price}>{formatPrice(resumen.dueCents, true)}</Text>
           </View>
         </View>
-      </View>
-    </Modal>
+      ) : null}
+
+      {resumen.dueCents > 0 ? (
+        <>
+          <View style={c.medios}>
+            {MEDIOS.map((m) => (
+              <Pressable
+                key={m.key}
+                onPress={() => {
+                  setMedio(m.key)
+                  setRecibido('')
+                  setReferencia('')
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: medio === m.key }}
+                style={[c.medio, medio === m.key && c.medioActivo]}
+              >
+                <Text style={medio === m.key ? s.labelStrong : s.label}>{m.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {esEfectivo ? (
+            <View style={c.bloque}>
+              <View style={c.atajos}>
+                {atajos.map((cents) => (
+                  <Pressable
+                    key={cents}
+                    onPress={() => setRecibido((cents / 100).toFixed(2))}
+                    style={c.atajo}
+                    accessibilityRole="button"
+                  >
+                    <Text style={s.body}>{formatPrice(cents)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Field
+                label="Recibido"
+                value={recibido}
+                onChangeText={setRecibido}
+                keyboardType="decimal-pad"
+                inputMode="decimal"
+                placeholder={(resumen.dueCents / 100).toFixed(2)}
+              />
+
+              {recibidoCents != null && recibidoCents > resumen.dueCents ? (
+                <View style={c.cambio}>
+                  <Text style={s.label}>Cambio</Text>
+                  <Text style={s.priceDisplay}>
+                    {formatPrice(recibidoCents - resumen.dueCents, true)}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <View style={c.bloque}>
+              <View style={s.rowBetween}>
+                <Text style={s.bodyMuted}>Importe</Text>
+                <Text style={s.price}>{formatPrice(resumen.dueCents, true)}</Text>
+              </View>
+              <Field
+                label="Referencia (opcional)"
+                value={referencia}
+                onChangeText={setReferencia}
+                autoCapitalize="characters"
+                placeholder={medio === 'card' ? 'Autorización' : 'Folio'}
+              />
+            </View>
+          )}
+
+          {/* Solo se ofrece partir el pago cuando el medio actual no
+              cubre el total: en una venta normal el botón no aparece y
+              no hay nada que decidir. */}
+          {esEfectivo && recibidoCents != null && recibidoCents < resumen.dueCents ? (
+            <Button
+              label={`Añadir ${formatPrice(recibidoCents, true)} y pagar el resto con otro medio`}
+              variant="outline"
+              onPress={añadirPago}
+            />
+          ) : null}
+        </>
+      ) : null}
+
+    </Sheet>
   )
 }
 
 const c = StyleSheet.create({
-  fondo: { flex: 1, backgroundColor: 'rgba(10,10,10,0.45)' },
-  hoja: {
-    maxHeight: '88%',
-    backgroundColor: color['paper-bright'],
-    borderTopWidth: size.border,
-    borderTopColor: color.primary,
-  },
-  cabecera: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    padding: space.edge,
-    borderBottomWidth: 1,
-    borderBottomColor: color['surface-variant'],
-  },
-  cuerpo: { padding: space.edge, gap: space.gutter },
   bloque: { gap: space.gap },
   medios: { flexDirection: 'row', gap: space.gap },
   medio: {
@@ -327,10 +292,4 @@ const c = StyleSheet.create({
   },
   quitar: { marginLeft: space.gutter },
   quitarTexto: { ...text.labelUpper, fontSize: 10, color: color['text-muted'] },
-  error: { borderWidth: 1, borderColor: color.primary, padding: space.gutter },
-  pie: {
-    padding: space.edge,
-    borderTopWidth: 1,
-    borderTopColor: color['surface-variant'],
-  },
 })
