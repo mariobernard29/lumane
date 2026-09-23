@@ -16,7 +16,6 @@
     },
     "android": {
       "package": "mx.lumane.pos",
-      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0A"
       },
@@ -24,6 +23,12 @@
         "android.permission.CAMERA",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN"
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      },
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -47,6 +52,10 @@
       },
       "router": {}
     },
-    "owner": "mbernard29"
+    "owner": "mbernard29",
+    "updates": {
+      "url": "https://u.expo.dev/222c1a7f-a731-4e81-8925-9c7812878ab8"
+    },
+    "ios": {}
   }
 }
