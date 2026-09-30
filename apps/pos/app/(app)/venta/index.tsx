@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -9,12 +10,14 @@ import {
   View,
 } from 'react-native'
 import { formatPrice, lineTotalCents, type SaleLine } from '@lumane/core'
+import { imageUrl } from '@lumane/db'
 
 import { useSaleCart } from '@/features/sale/useSaleCart'
 import { useVariantSearch, type VariantHit } from '@/features/sale/useVariantSearch'
 import { ChargeSheet } from '@/features/sale/ChargeSheet'
 import { SaleDoneSheet } from '@/features/receipt/SaleDoneSheet'
 import { useSession, useStaff } from '@/lib/session'
+import { supabaseUrl } from '@/lib/supabase'
 import { Button } from '@/ui/Button'
 import { color, s, size, space, text } from '@/theme'
 
@@ -239,20 +242,39 @@ function TarjetaVariante({ hit, onPress }: { hit: VariantHit; onPress: () => voi
       accessibilityLabel={`${hit.product_name} talla ${hit.variant_title || 'única'}, ${hit.available} disponibles`}
       style={({ pressed }) => [v.tarjeta, pressed && v.tarjetaPulsada]}
     >
-      <Text style={v.tarjetaNombre} numberOfLines={2}>
-        {hit.product_name}
-      </Text>
-      <View style={v.tarjetaMedio}>
-        <Text style={s.labelStrong}>{hit.variant_title || 'Única'}</Text>
-        {/* El stock se muestra SIEMPRE, también en cero: la cajera puede
-            vender la prenda que tiene en la mano aunque el sistema no la
-            cuente, y necesita saber que va a quedar en descuadre. */}
-        <Text style={[s.label, agotada && v.agotada]}>{hit.available} disp</Text>
+      {/* La foto se busca con los ojos antes que el nombre: una boutique
+          reconoce sus prendas por la prenda. Va a sangre y con altura FIJA,
+          no con proporción: una altura relativa al ancho de la columna haría
+          tarjetas enormes en horizontal y dejaría dos filas a la vista. Con
+          96 caben cuatro y la prenda sigue siendo reconocible. */}
+      <View style={v.foto}>
+        {hit.image_path ? (
+          <Image
+            source={{ uri: imageUrl(supabaseUrl, hit.image_path) }}
+            style={v.fotoImagen}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={v.sinFoto}>Sin foto</Text>
+        )}
       </View>
-      <Text style={s.price}>{formatPrice(hit.price_cents)}</Text>
-      <Text style={v.sku} numberOfLines={1}>
-        {hit.sku}
-      </Text>
+
+      <View style={v.tarjetaCuerpo}>
+        <Text style={v.tarjetaNombre} numberOfLines={2}>
+          {hit.product_name}
+        </Text>
+        <View style={v.tarjetaMedio}>
+          <Text style={s.labelStrong}>{hit.variant_title || 'Única'}</Text>
+          {/* El stock se muestra SIEMPRE, también en cero: la cajera puede
+              vender la prenda que tiene en la mano aunque el sistema no la
+              cuente, y necesita saber que va a quedar en descuadre. */}
+          <Text style={[s.label, agotada && v.agotada]}>{hit.available} disp</Text>
+        </View>
+        <Text style={s.price}>{formatPrice(hit.price_cents)}</Text>
+        <Text style={v.sku} numberOfLines={1}>
+          {hit.sku}
+        </Text>
+      </View>
     </Pressable>
   )
 }
@@ -333,9 +355,19 @@ const v = StyleSheet.create({
     backgroundColor: color['paper-bright'],
     borderWidth: 1,
     borderColor: color['surface-variant'],
-    padding: space.gap,
-    justifyContent: 'space-between',
+    // Sin relleno: lo pone el cuerpo. La foto tiene que llegar al borde, y un
+    // relleno en la tarjeta la dejaría flotando dentro de un marco.
+    overflow: 'hidden',
   },
+  foto: {
+    height: 96,
+    backgroundColor: color['vellum-neutral'],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fotoImagen: { width: '100%', height: '100%' },
+  sinFoto: { ...text.labelUpper, fontSize: 10, letterSpacing: 1, color: color['text-muted'] },
+  tarjetaCuerpo: { flex: 1, padding: space.gap, justifyContent: 'space-between' },
   tarjetaPulsada: { backgroundColor: color['vellum-neutral'], borderColor: color.primary },
   tarjetaNombre: { ...text.bodyMd, fontSize: 15, lineHeight: 20, color: color.primary },
   tarjetaMedio: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

@@ -10,7 +10,7 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "db:types": "supabase gen types typescript --project-id izyoixhffjjodzizkbqk --schema public > packages/db/src/database.types.ts",
+    "db:types": "node scripts/generar-tipos.mjs",
     "imagenes:prototipo": "node --experimental-strip-types scripts/subir-prototipo.ts"
   },
   "devDependencies": {

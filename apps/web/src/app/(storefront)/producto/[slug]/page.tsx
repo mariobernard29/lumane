@@ -155,8 +155,8 @@ export default async function ProductPage({ params }: PageProps) {
                       <p className="whitespace-pre-line">{product.longDescription}</p>
                     ) : (
                       <p>
-                        Pieza de serie corta, confeccionada en tirada limitada. Escríbenos por
-                        WhatsApp si necesitas medidas exactas antes de comprar.
+                        Traemos pocas piezas de cada modelo. Escríbenos por WhatsApp si necesitas
+                        medidas exactas antes de comprar.
                       </p>
                     )}
                   </div>

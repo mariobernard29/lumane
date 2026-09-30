@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 
+import { recordarCuenta } from './cuentas.ts'
 import { supabase } from './supabase.ts'
 
 /**
@@ -89,6 +90,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     // Una clienta con cuenta en la tienda en línea puede autenticarse, pero no
     // es personal. El RPC devuelve null y aquí se dice por qué.
     setNotStaff(perfil === null)
+
+    // El desplegable de la pantalla de ingreso se llena AQUÍ y no en `signIn`:
+    // solo se recuerda a quien resultó ser personal, y con el nombre que da la
+    // base en vez del correo. No se espera al resultado porque nada de lo que
+    // viene después depende de ello.
+    if (perfil && activa.user.email) {
+      void recordarCuenta(activa.user.email, perfil.full_name)
+    }
   }, [])
 
   useEffect(() => {

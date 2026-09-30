@@ -42,9 +42,24 @@ export const SECCIONES: Seccion[] = [
     descripcion: 'Textos del sitio y preguntas frecuentes.',
   },
   {
+    href: '/admin/boutique',
+    label: 'La boutique',
+    permiso: 'cms.write',
+    descripcion: 'Las fotos del local que se ven en la página de la tienda.',
+  },
+  {
     href: '/admin/catalogo',
     label: 'Catálogo',
     permiso: 'inventory.write',
     descripcion: 'Prendas, variantes, precios y fotografía.',
+  },
+  {
+    href: '/admin/reportes',
+    label: 'Reportes',
+    // El único que no es `cms.write` ni `inventory.write`: `reports.read` lo
+    // tienen `manager` y `owner`, pero no la cajera. Lo que vende la tienda no
+    // es asunto de quien está en el mostrador.
+    permiso: 'reports.read',
+    descripcion: 'Cuánto se vendió, por canal, por forma de pago y por día.',
   },
 ]

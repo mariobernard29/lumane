@@ -21,9 +21,26 @@ export interface DistanceResult {
   cached: boolean
 }
 
-/** Redondeo a ~11 m: dos direcciones de la misma cuadra comparten caché. */
-function addressHash(locationId: string, lat: number, lng: number): string {
-  return `${locationId}:${lat.toFixed(4)}:${lng.toFixed(4)}`
+/**
+ * Redondeo a ~11 m: dos direcciones de la misma cuadra comparten caché.
+ *
+ * **El origen entra en la clave, no solo el destino.** Antes no estaba, y eso
+ * convertía una coordenada mal capturada en un error permanente: al corregir
+ * `locations.lat/lng` las cotizaciones viejas seguían sirviéndose desde la
+ * caché, calculadas desde el punto equivocado, sin forma de notarlo.
+ *
+ * Ya pasó una vez. La sucursal arrastraba el centro de Los Mochis como
+ * marcador de posición —a un kilómetro largo del local— y se corrigió en la
+ * migración 0061. No llegó a hacer daño solo porque sin `GOOGLE_MAPS_SERVER_KEY`
+ * nunca se guardó ni una fila, pero el fallo estaba servido.
+ */
+function addressHash(
+  locationId: string,
+  origin: { lat: number; lng: number },
+  lat: number,
+  lng: number,
+): string {
+  return `${locationId}:${origin.lat.toFixed(4)},${origin.lng.toFixed(4)}:${lat.toFixed(4)}:${lng.toFixed(4)}`
 }
 
 export async function getDrivingDistance(
@@ -32,7 +49,7 @@ export async function getDrivingDistance(
   destination: { lat: number; lng: number },
 ): Promise<DistanceResult | null> {
   const supabase = await createServerSupabase()
-  const hash = addressHash(locationId, destination.lat, destination.lng)
+  const hash = addressHash(locationId, origin, destination.lat, destination.lng)
 
   const { data: cachedRow } = await supabase
     .from('shipping_quotes')

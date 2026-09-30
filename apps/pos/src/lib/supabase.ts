@@ -92,6 +92,15 @@ if (!url || !key) {
   )
 }
 
+/**
+ * La URL del proyecto, ya comprobada arriba.
+ *
+ * La exporta este archivo para que las pantallas que arman rutas de Storage
+ * —la rejilla de venta, por ejemplo— no vuelvan a leer la variable de entorno
+ * y a repetir la comprobación de que existe.
+ */
+export const supabaseUrl = url
+
 export const supabase: LumaneClient = createClient(url, key, {
   auth: {
     storage: almacenSeguro,

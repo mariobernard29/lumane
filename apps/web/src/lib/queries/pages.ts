@@ -1,8 +1,26 @@
 import { cache } from 'react'
 
+import { BUCKETS } from '@lumane/db'
+
+import { storageUrl } from '../images.ts'
 import { createServerSupabase } from '../supabase/server.ts'
 
-export type PageTemplate = 'prose' | 'faq' | 'contact' | 'size_guide'
+/**
+ * Las plantillas que sabe pintar `/p/[slug]`.
+ *
+ * Es la misma lista que la restricción `pages_template_is_known` de la base.
+ * Tenía todavía `size_guide`, que la migración 0054 quitó del CHECK: un valor
+ * que el tipo admite y la base rechaza no da error aquí, pero hace creer que
+ * existe una plantilla que no se puede guardar.
+ */
+export type PageTemplate = 'prose' | 'faq' | 'contact' | 'store'
+
+/** Una foto de la boutique. Salen de `hero_slides` con `page_key = 'boutique'`. */
+export interface StorePhoto {
+  id: string
+  url: string
+  alt: string | null
+}
 
 export interface ContentPage {
   slug: string
@@ -82,4 +100,34 @@ export const getFaqGroups = cache(async (): Promise<FaqGroup[]> => {
   }
 
   return [...groups.values()]
+})
+
+/**
+ * Las fotos del local.
+ *
+ * Viven en `hero_slides` con `page_key = 'boutique'` en vez de en una tabla
+ * nueva: ya es la tabla de imágenes con pie de foto, ya tiene orden, ventana
+ * de fechas y su política de lectura pública, y reutilizarla significa que la
+ * galería se administra desde el panel sin inventar nada.
+ *
+ * Devuelve `[]` mientras no haya ninguna, y la página no pinta la galería. Una
+ * retícula de huecos grises se ve peor que no tener fotos.
+ */
+export const getStorePhotos = cache(async (): Promise<StorePhoto[]> => {
+  const supabase = await createServerSupabase()
+  const { data } = await supabase
+    .from('hero_slides')
+    .select('id, image_path, image_alt')
+    .eq('page_key', 'boutique')
+    .order('position')
+
+  return (data ?? [])
+    // Una fila sin imagen es una que la propietaria empezó y no terminó de
+    // subir: se salta en lugar de pintar el marcador de posición.
+    .filter((f) => Boolean(f.image_path))
+    .map((f) => ({
+      id: f.id,
+      url: storageUrl(f.image_path, BUCKETS.content),
+      alt: f.image_alt,
+    }))
 })

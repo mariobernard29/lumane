@@ -2634,6 +2634,7 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          admin_email: string | null
           contact_email: string | null
           contact_phone: string | null
           copyright_text: string | null
@@ -2653,6 +2654,7 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          admin_email?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           copyright_text?: string | null
@@ -2672,6 +2674,7 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          admin_email?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           copyright_text?: string | null
@@ -3013,6 +3016,10 @@ export type Database = {
       release_cart_stock: { Args: { p_token?: string }; Returns: number }
       release_expired_reservations: { Args: never; Returns: number }
       reserve_cart_stock: { Args: { p_token: string }; Returns: Json }
+      sales_report: {
+        Args: { p_from?: string; p_location_id?: string; p_to?: string }
+        Returns: Json
+      }
       search_customers: {
         Args: { p_limit?: number; p_query: string }
         Returns: Json

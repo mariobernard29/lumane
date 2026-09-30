@@ -20,7 +20,7 @@ import { color, s, size, space, text } from '@/theme'
  */
 
 interface Modulo {
-  href: '/venta' | '/caja' | '/pedidos' | '/historial' | '/inventario' | '/clientes'
+  href: '/venta' | '/caja' | '/pedidos' | '/historial' | '/inventario' | '/clientes' | '/reportes'
   label: string
   /** Sin este permiso el módulo no se pinta: no se ofrecen callejones sin salida. */
   permission: string
@@ -35,6 +35,9 @@ const MODULOS: Modulo[] = [
   { href: '/historial', label: 'Historial', permission: 'orders.read' },
   { href: '/inventario', label: 'Inventario', permission: 'inventory.read' },
   { href: '/clientes', label: 'Clientes', permission: 'customers.read' },
+  // Va al final y con 'reports.read': la cajera no lo verá siquiera, que es lo
+  // que decidió la migración 0058 al colgar el reporte de ese permiso.
+  { href: '/reportes', label: 'Reportes', permission: 'reports.read' },
 ]
 
 /**

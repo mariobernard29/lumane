@@ -14,6 +14,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { plantillaPara, type Carga } from './plantillas.ts'
+import { plantillaAviso, type CargaAviso } from './avisos.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -70,7 +71,38 @@ interface Resultado {
   ref?: string
 }
 
+/**
+ * Los avisos internos (`admin.*`).
+ *
+ * Van por un camino aparte porque no son de una clienta: el destinatario sale
+ * de `store_settings.admin_email` y los datos de `admin_email_payload`, que
+ * según el tema arma un corte de caja, una lista de agotados o un pedido.
+ *
+ * Si el RPC devuelve `null` es que no hay correo de administración puesto, o
+ * que el registro desapareció entre la emisión y el envío. Ninguna de las dos
+ * es un fallo que reintentar: se omite y se cierra el evento.
+ */
+async function procesarAviso(ev: Evento): Promise<Resultado> {
+  const { data, error } = await supabase.rpc('admin_email_payload', {
+    p_topic: ev.topic,
+    p_payload: ev.payload,
+  })
+  if (error) throw new Error(`admin_email_payload: ${error.message}`)
+  if (!data) {
+    return { estado: 'omitido', detalle: `${ev.topic} sin correo de administración o sin datos` }
+  }
+
+  const c = data as CargaAviso
+  const correo = plantillaAviso(ev.topic, c)
+  if (!correo) return { estado: 'omitido', detalle: `${ev.topic} no tiene plantilla o vino vacío` }
+
+  const id = await mandarPorResend(c.admin_email, correo.asunto, correo.html, correo.texto)
+  return { estado: 'enviado', detalle: `resend:${id}`, ref: id }
+}
+
 async function procesar(ev: Evento): Promise<Resultado> {
+  if (ev.topic.startsWith('admin.')) return procesarAviso(ev)
+
   const orderId = ev.payload?.order_id as string | undefined
   if (!orderId) return { estado: 'omitido', detalle: `evento ${ev.topic} sin order_id` }
 

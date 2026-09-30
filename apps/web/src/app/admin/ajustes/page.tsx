@@ -26,7 +26,7 @@ export default async function AjustesPage() {
     // En UNA cadena literal, sin concatenar: supabase-js deduce el tipo del
     // resultado analizando este texto, y un `+` lo degrada a `string` genérico
     // — el objeto devuelto pierde todas sus columnas.
-    .select('store_name, tagline, contact_email, contact_phone, whatsapp_number, opening_hours, newsletter_title, newsletter_body, newsletter_disclaimer, copyright_text, social_links')
+    .select('store_name, tagline, contact_email, admin_email, contact_phone, whatsapp_number, opening_hours, newsletter_title, newsletter_body, newsletter_disclaimer, copyright_text, social_links')
     .eq('id', true)
     .maybeSingle()
 
@@ -44,6 +44,7 @@ export default async function AjustesPage() {
     storeName: cadena(data.store_name),
     tagline: cadena(data.tagline),
     contactEmail: cadena(data.contact_email),
+    adminEmail: cadena(data.admin_email),
     contactPhone: cadena(data.contact_phone),
     whatsappNumber: cadena(data.whatsapp_number),
     openingHours: cadena(data.opening_hours),

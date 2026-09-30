@@ -10,13 +10,13 @@
  * arreglo a posteriori — ya se mandó.
  */
 
-const TINTA = '#0A0A0A'
-const PAPEL = '#FFFFFF'
-const FONDO = '#F9F9F9'
-const LINEA = '#E2E2E2'
-const TENUE = '#6B6B68'
-const DISPLAY = "'Instrument Serif', Georgia, serif"
-const TEXTO = "'Figtree', 'Helvetica Neue', Arial, sans-serif"
+export const TINTA = '#0A0A0A'
+export const PAPEL = '#FFFFFF'
+export const FONDO = '#F9F9F9'
+export const LINEA = '#E2E2E2'
+export const TENUE = '#6B6B68'
+export const DISPLAY = "'Instrument Serif', Georgia, serif"
+export const TEXTO = "'Figtree', 'Helvetica Neue', Arial, sans-serif"
 
 export interface Linea {
   product_name: string
@@ -100,7 +100,7 @@ export function pesos(centavos: number | string | null | undefined): string {
  * dirección los escribe una persona, y un apellido con `&` o unas comillas en
  * una referencia de entrega romperían el HTML del correo.
  */
-function esc(v: unknown): string {
+export function esc(v: unknown): string {
   return String(v ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

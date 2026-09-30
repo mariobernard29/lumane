@@ -24,6 +24,7 @@ export interface AjustesIniciales {
   storeName: string
   tagline: string
   contactEmail: string
+  adminEmail: string
   contactPhone: string
   whatsappNumber: string
   openingHours: string
@@ -76,6 +77,19 @@ export function FormularioAjustes({ inicial }: { inicial: AjustesIniciales }) {
             type="email"
             inputMode="email"
             defaultValue={inicial.contactEmail}
+          />
+        </FormRow>
+        <FormRow
+          label="Correo de administración"
+          htmlFor="adminEmail"
+          hint="Aquí llegan los avisos internos: cada venta en línea, el corte del día al cerrar la caja y las piezas agotadas. No se ve en la tienda. Si lo dejas vacío no se manda ningún aviso."
+        >
+          <TextInput
+            id="adminEmail"
+            name="adminEmail"
+            type="email"
+            inputMode="email"
+            defaultValue={inicial.adminEmail}
           />
         </FormRow>
         <FormRow label="Teléfono" htmlFor="contactPhone">
