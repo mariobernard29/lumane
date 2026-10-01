@@ -102,6 +102,11 @@ export default async function CheckoutPage() {
           methods={methods}
           initialTotals={cart.totals}
           localCity={localCity}
+          boutique={
+            location?.lat != null && location?.lng != null
+              ? { lat: location.lat, lng: location.lng }
+              : null
+          }
           stripeEnabled={isStripeConfigured()}
           customer={
             customer

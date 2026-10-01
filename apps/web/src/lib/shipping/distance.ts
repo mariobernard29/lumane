@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { createServerSupabase } from '../supabase/server.ts'
+import { createAdminSupabase } from '../supabase/server.ts'
 
 /**
  * Distancia por carretera entre la boutique y la dirección de entrega.
@@ -48,7 +48,13 @@ export async function getDrivingDistance(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
 ): Promise<DistanceResult | null> {
-  const supabase = await createServerSupabase()
+  // Llave de servicio y no la sesión de la clienta: `shipping_quotes` solo
+  // tiene política de LECTURA para el personal. Con la sesión de una clienta la
+  // consulta volvía vacía y el upsert se rechazaba en silencio, así que la
+  // caché nunca guardó nada y cada cotización era una llamada pagada a Google.
+  // La tabla es interna del servidor —nadie fuera de este módulo la toca—, y
+  // abrirla a `anon` dejaría a cualquiera escribir distancias falsas en ella.
+  const supabase = createAdminSupabase()
   const hash = addressHash(locationId, origin, destination.lat, destination.lng)
 
   const { data: cachedRow } = await supabase

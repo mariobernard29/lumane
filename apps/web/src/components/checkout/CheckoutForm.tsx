@@ -11,6 +11,8 @@ import {
 } from '@/actions/checkout'
 import type { CartTotals } from '@/lib/queries/cart'
 import type { ShippingMethod } from '@/lib/queries/shipping'
+import { matchState } from '@/lib/maps/places'
+import { AddressAutocomplete } from './AddressAutocomplete'
 import { CardPaymentSection } from './CardPaymentSection'
 import { SelectField, TextField } from './Field'
 
@@ -28,6 +30,8 @@ interface CheckoutFormProps {
   initialTotals: CartTotals
   /** Ciudad de la boutique: la entrega local solo aplica ahí. */
   localCity: string
+  /** Coordenadas de la boutique, para sesgar las sugerencias de dirección. */
+  boutique: { lat: number; lng: number } | null
   /** Solo se ofrece tarjeta si Stripe está configurado en el servidor. */
   stripeEnabled: boolean
   customer: { email: string; firstName: string; lastName: string | null } | null
@@ -53,6 +57,7 @@ export function CheckoutForm({
   methods,
   initialTotals,
   localCity,
+  boutique,
   customer,
   stripeEnabled,
 }: CheckoutFormProps) {
@@ -79,6 +84,9 @@ export function CheckoutForm({
   const selectedMethod = methods.find((m) => m.code === shippingCode) ?? null
   const isPickup = selectedMethod?.kind === 'pickup'
   const isLocal = selectedMethod?.kind === 'local_delivery'
+  // La entrega local se cobra por distancia, y la distancia sale de las
+  // coordenadas que trae una sugerencia de Google. Sin ellas no hay cotización.
+  const localNeedsAddress = isLocal && (address.lat == null || address.lng == null)
 
   // La entrega local solo tiene sentido en la ciudad de la boutique. Ofrecerla
   // a alguien de otra ciudad para después rechazarla es peor que no ofrecerla.
@@ -293,15 +301,29 @@ export function CheckoutForm({
                 onChange={(e) => setAddress({ ...address, recipient: e.target.value })}
                 wrapperClassName="md:col-span-2"
               />
-              <TextField
+              <AddressAutocomplete
                 id="calle"
                 label="Calle"
-                required
-                autoComplete="address-line1"
-                placeholder="Av. Álvaro Obregón"
+                placeholder="Av. Álvaro Obregón 1606"
                 value={address.street}
-                onChange={(e) => setAddress({ ...address, street: e.target.value })}
+                bias={boutique}
                 wrapperClassName="md:col-span-2"
+                onType={(street) => setAddress({ ...address, street, lat: null, lng: null })}
+                onSelect={(found) =>
+                  setAddress({
+                    ...address,
+                    street: found.street || address.street,
+                    // Si la sugerencia era solo la calle, se respeta el número
+                    // que la clienta ya hubiera escrito.
+                    extNo: found.extNo || address.extNo,
+                    neighborhood: found.neighborhood || address.neighborhood,
+                    postalCode: found.postalCode || address.postalCode,
+                    city: found.city || address.city,
+                    state: matchState(found.state, ESTADOS) ?? address.state,
+                    lat: found.lat,
+                    lng: found.lng,
+                  })
+                }
               />
               <TextField
                 id="ext"
@@ -333,7 +355,14 @@ export function CheckoutForm({
                 autoComplete="postal-code"
                 value={address.postalCode}
                 onChange={(e) =>
-                  setAddress({ ...address, postalCode: e.target.value.replace(/\D/g, '') })
+                  setAddress({
+                    ...address,
+                    postalCode: e.target.value.replace(/\D/g, ''),
+                    // Otro código postal es otra dirección: las coordenadas de
+                    // la sugerencia ya no le corresponden.
+                    lat: null,
+                    lng: null,
+                  })
                 }
               />
               <TextField
@@ -342,7 +371,9 @@ export function CheckoutForm({
                 required
                 autoComplete="address-level2"
                 value={address.city}
-                onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                onChange={(e) =>
+                  setAddress({ ...address, city: e.target.value, lat: null, lng: null })
+                }
               />
               <SelectField
                 id="estado"
@@ -423,13 +454,12 @@ export function CheckoutForm({
             })}
           </div>
 
-          {isLocal && !address.postalCode ? (
-            <p className="font-body-md text-[13px] text-text-muted mt-4">
-              Completa tu dirección para calcular el costo de la entrega local.
+          {localNeedsAddress ? (
+            <p role="status" className="font-body-md text-[13px] text-text-muted mt-4">
+              Para calcular la entrega local, escribe tu calle y elige tu dirección de las
+              sugerencias.
             </p>
-          ) : null}
-
-          {quoteMessage ? (
+          ) : quoteMessage ? (
             <p
               role="status"
               className={cn(
@@ -512,7 +542,7 @@ export function CheckoutForm({
                 amountCents={totals.totalCents}
                 getOrderInput={buildOrderInput}
                 validate={validateForCard}
-                disabled={isQuoting || totals.shippingAvailable === false}
+                disabled={isQuoting || totals.shippingAvailable === false || localNeedsAddress}
               />
             </div>
           ) : null}
@@ -531,7 +561,9 @@ export function CheckoutForm({
             type="submit"
             variant="solid"
             fullWidth
-            disabled={isPlacing || isQuoting || totals.shippingAvailable === false}
+            disabled={
+              isPlacing || isQuoting || totals.shippingAvailable === false || localNeedsAddress
+            }
             className="h-16 sm:h-14"
           >
             {isPlacing
