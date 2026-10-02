@@ -225,6 +225,19 @@ body {
   }
 }
 
+/* Algo que aparece tras un cálculo —la entrega local en el pago— entra con
+   un desvanecido corto, para que se note que es nuevo y no que siempre
+   estuvo ahí. */
+.reveal-in {
+  animation: revealIn 0.5s ease-out;
+}
+@keyframes revealIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Acordeones — <details> nativos, sin JavaScript
    -------------------------------------------------------------------------- */
@@ -318,7 +331,8 @@ body {
    Accesibilidad
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  .hero-media {
+  .hero-media,
+  .reveal-in {
     animation: none;
     transform: none;
   }

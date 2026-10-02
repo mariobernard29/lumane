@@ -38,10 +38,54 @@ export type CheckoutAddress = z.infer<typeof addressSchema>
 export interface QuoteResult {
   ok: boolean
   totals?: CartTotals
-  /** Kilómetros hasta la boutique, cuando aplica la entrega local. */
+  /** Kilómetros hasta la boutique, cuando aplica la entrega local. Para mostrar. */
   distanceKm?: number | null
+  /**
+   * Los metros EXACTOS, para cobrar. No se reconstruyen desde `distanceKm`:
+   * redondeado a 0.1 km, 1,999 m se vuelven 2,000 y caen en el tramo de
+   * 2–4 km — la clienta vería $50 al cotizar y se le cobrarían $60.
+   */
+  distanceMeters?: number | null
   message?: string
 }
+
+type ServerSupabase = Awaited<ReturnType<typeof createServerSupabase>>
+
+/**
+ * Metros por carretera desde la boutique hasta unas coordenadas.
+ *
+ * Lo comparten la cotización y la comprobación de entrega local, que tienen
+ * que medir exactamente igual: si una dijera 9.8 km y la otra 10.1, la
+ * clienta vería ofrecida una entrega que luego no se le puede cobrar.
+ */
+async function metersFromBoutique(
+  supabase: ServerSupabase,
+  lat: number,
+  lng: number,
+): Promise<{ meters: number } | { message: string }> {
+  const { data: location } = await supabase
+    .from('locations')
+    .select('id, lat, lng')
+    .eq('is_default', true)
+    .maybeSingle()
+
+  if (!location?.lat || !location?.lng) {
+    return { message: 'La boutique no tiene ubicación configurada' }
+  }
+
+  const distance = await getDrivingDistance(
+    location.id,
+    { lat: location.lat, lng: location.lng },
+    { lat, lng },
+  )
+
+  if (!distance) {
+    return { message: 'No pudimos calcular la distancia. Elige otro método de envío.' }
+  }
+  return { meters: distance.meters }
+}
+
+const toKm = (meters: number) => Math.round((meters / 1000) * 10) / 10
 
 /**
  * Recalcula el resumen con el método de envío y el cupón elegidos.
@@ -71,31 +115,11 @@ export async function quoteCheckout(input: {
       }
     }
 
-    const { data: location } = await supabase
-      .from('locations')
-      .select('id, lat, lng')
-      .eq('is_default', true)
-      .maybeSingle()
-
-    if (!location?.lat || !location?.lng) {
-      return { ok: false, message: 'La boutique no tiene ubicación configurada' }
-    }
-
-    const distance = await getDrivingDistance(
-      location.id,
-      { lat: location.lat, lng: location.lng },
-      { lat: input.lat, lng: input.lng },
-    )
-
-    if (!distance) {
-      return {
-        ok: false,
-        message: 'No pudimos calcular la distancia. Elige otro método de envío.',
-      }
-    }
+    const distance = await metersFromBoutique(supabase, input.lat, input.lng)
+    if ('message' in distance) return { ok: false, message: distance.message }
 
     distanceMeters = distance.meters
-    distanceKm = Math.round((distance.meters / 1000) * 10) / 10
+    distanceKm = toKm(distance.meters)
   }
 
   const { data, error } = await supabase.rpc('preview_checkout', {
@@ -111,7 +135,84 @@ export async function quoteCheckout(input: {
   }
 
   const raw = data as unknown as { totals: Parameters<typeof toTotals>[0] }
-  return { ok: true, totals: toTotals(raw.totals), distanceKm }
+  return { ok: true, totals: toTotals(raw.totals), distanceKm, distanceMeters }
+}
+
+export interface LocalDeliveryCheck {
+  /** La dirección cae dentro de algún tramo de entrega local. */
+  available: boolean
+  distanceKm: number | null
+  /** Lo que costaría la entrega local con la bolsa de ahora (0 = gratis). */
+  shippingCents: number | null
+  /** Hasta dónde llega la entrega local: el `max_km` del último tramo. */
+  maxKm: number | null
+  message?: string
+}
+
+const coordsSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  couponCode: z.string().nullable(),
+})
+
+/**
+ * ¿Llega la entrega local a esta dirección, y cuánto costaría?
+ *
+ * La pregunta se hace en cuanto la clienta elige su dirección, ANTES de que
+ * elija método: la entrega local solo se le ofrece si su dirección está dentro
+ * de la zona. Enseñarla y rechazarla después sería peor que no enseñarla.
+ *
+ * El precio no se calcula aquí: se le pregunta a `preview_checkout` con el
+ * método `local`, igual que al cotizar y al cobrar. Así el precio que ve en la
+ * opción es el mismo que se cobra, umbral de envío gratis incluido.
+ */
+export async function checkLocalDelivery(input: {
+  lat: number
+  lng: number
+  couponCode: string | null
+}): Promise<LocalDeliveryCheck> {
+  const none = { available: false, distanceKm: null, shippingCents: null, maxKm: null }
+
+  const parsed = coordsSchema.safeParse(input)
+  if (!parsed.success) return { ...none, message: 'Dirección no válida' }
+
+  const token = await readCartToken()
+  if (!token) return { ...none, message: 'Tu bolsa está vacía' }
+
+  const supabase = await createServerSupabase()
+
+  const [distance, { data: rates }] = await Promise.all([
+    metersFromBoutique(supabase, parsed.data.lat, parsed.data.lng),
+    supabase
+      .from('local_delivery_rates')
+      .select('max_km, shipping_methods!inner(code)')
+      .eq('shipping_methods.code', 'local'),
+  ])
+
+  const maxKm = rates?.length ? Math.max(...rates.map((r) => Number(r.max_km))) : null
+  if ('message' in distance) return { ...none, maxKm, message: distance.message }
+
+  const { data, error } = await supabase.rpc('preview_checkout', {
+    p_token: token,
+    p_coupon_code: parsed.data.couponCode ?? undefined,
+    p_shipping_method_code: 'local',
+    p_distance_meters: distance.meters,
+  })
+
+  if (error || !data) {
+    console.error('[checkout] preview_checkout (local) falló:', error?.message)
+    return { ...none, maxKm, distanceKm: toKm(distance.meters), message: errorMessage(error) }
+  }
+
+  const totals = toTotals((data as unknown as { totals: Parameters<typeof toTotals>[0] }).totals)
+  const available = totals.shippingAvailable !== false
+
+  return {
+    available,
+    distanceKm: toKm(distance.meters),
+    shippingCents: available ? totals.shippingCents : null,
+    maxKm,
+  }
 }
 
 const placeOrderSchema = z.object({
@@ -215,7 +316,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
     }
   }
 
-  const distanceMeters = quote.distanceKm != null ? Math.round(quote.distanceKm * 1000) : null
+  const distanceMeters = quote.distanceMeters ?? null
 
   const { data: result, error } = await admin.rpc('confirm_online_order', {
     p_cart_token: token,

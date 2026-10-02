@@ -7,6 +7,7 @@ import { CheckoutSteps, formatPrice } from '@lumane/ui-web'
 import { CheckoutForm } from '@/components/checkout/CheckoutForm'
 import { getCart } from '@/lib/queries/cart'
 import { getCurrentCustomer } from '@/lib/queries/customer'
+import { getStoreChrome } from '@/lib/queries/layout'
 import { getDefaultLocation, getShippingMethods } from '@/lib/queries/shipping'
 import { isStripeConfigured } from '@/lib/stripe/server'
 
@@ -33,10 +34,11 @@ export default async function CheckoutPage() {
   // bolsa antes de pedir datos personales.
   if (cart.unavailable.length > 0) redirect('/carrito')
 
-  const [methods, location, customer] = await Promise.all([
+  const [methods, location, customer, chrome] = await Promise.all([
     getShippingMethods(),
     getDefaultLocation(),
     getCurrentCustomer(),
+    getStoreChrome(),
   ])
 
   const localCity = (location?.address as { city?: string } | null)?.city ?? 'Los Mochis'
@@ -107,6 +109,7 @@ export default async function CheckoutPage() {
               ? { lat: location.lat, lng: location.lng }
               : null
           }
+          freeShippingOverCents={chrome.settings.freeShippingOverCents}
           stripeEnabled={isStripeConfigured()}
           customer={
             customer

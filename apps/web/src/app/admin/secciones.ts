@@ -48,6 +48,14 @@ export const SECCIONES: Seccion[] = [
     descripcion: 'Las fotos del local que se ven en la página de la tienda.',
   },
   {
+    href: '/admin/envios',
+    label: 'Envíos',
+    // `cms.write` porque es lo que exige RLS en `local_delivery_rates` desde
+    // la 0011. No es inventario ni dinero de una venta ya hecha.
+    permiso: 'cms.write',
+    descripcion: 'Lo que cuesta la entrega local en cada tramo de 2 km.',
+  },
+  {
     href: '/admin/catalogo',
     label: 'Catálogo',
     permiso: 'inventory.write',

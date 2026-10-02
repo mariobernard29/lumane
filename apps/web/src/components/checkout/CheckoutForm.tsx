@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { Button, Icon, cn, formatPrice } from '@lumane/ui-web'
 
 import {
+  checkLocalDelivery,
   placeOrder,
   quoteCheckout,
   type CheckoutAddress,
@@ -11,7 +12,7 @@ import {
 } from '@/actions/checkout'
 import type { CartTotals } from '@/lib/queries/cart'
 import type { ShippingMethod } from '@/lib/queries/shipping'
-import { matchState } from '@/lib/maps/places'
+import { matchState, placesEnabled } from '@/lib/maps/places'
 import { AddressAutocomplete } from './AddressAutocomplete'
 import { CardPaymentSection } from './CardPaymentSection'
 import { SelectField, TextField } from './Field'
@@ -32,10 +33,19 @@ interface CheckoutFormProps {
   localCity: string
   /** Coordenadas de la boutique, para sesgar las sugerencias de dirección. */
   boutique: { lat: number; lng: number } | null
+  /** Umbral de envío gratis, solo para las etiquetas de precio. */
+  freeShippingOverCents: number | null
   /** Solo se ofrece tarjeta si Stripe está configurado en el servidor. */
   stripeEnabled: boolean
   customer: { email: string; firstName: string; lastName: string | null } | null
 }
+
+/** Lo que se sabe de la entrega local para la dirección elegida. */
+type LocalCheckState =
+  | { status: 'idle' }
+  | { status: 'checking'; step: 0 | 1 }
+  | { status: 'available'; distanceKm: number; shippingCents: number }
+  | { status: 'unavailable'; distanceKm: number | null; maxKm: number | null }
 
 const EMPTY_ADDRESS: CheckoutAddress = {
   recipient: '',
@@ -58,6 +68,7 @@ export function CheckoutForm({
   initialTotals,
   localCity,
   boutique,
+  freeShippingOverCents,
   customer,
   stripeEnabled,
 }: CheckoutFormProps) {
@@ -81,31 +92,81 @@ export function CheckoutForm({
   const [isQuoting, startQuote] = useTransition()
   const [isPlacing, startPlace] = useTransition()
 
+  const [localCheck, setLocalCheck] = useState<LocalCheckState>({ status: 'idle' })
+  // Numera cada comprobación: si la clienta elige otra dirección mientras la
+  // anterior seguía calculándose, la respuesta vieja se descarta al llegar.
+  const localCheckSeq = useRef(0)
+
+  const hasCoords = address.lat != null && address.lng != null
+  // Sin coordenadas no hay nada comprobado, diga lo que diga el último estado:
+  // en cuanto la clienta retoca la calle, la ciudad o el código postal, la
+  // respuesta anterior ya no es de esta dirección.
+  const local: LocalCheckState = hasCoords ? localCheck : { status: 'idle' }
+
   const selectedMethod = methods.find((m) => m.code === shippingCode) ?? null
   const isPickup = selectedMethod?.kind === 'pickup'
   const isLocal = selectedMethod?.kind === 'local_delivery'
-  // La entrega local se cobra por distancia, y la distancia sale de las
-  // coordenadas que trae una sugerencia de Google. Sin ellas no hay cotización.
-  const localNeedsAddress = isLocal && (address.lat == null || address.lng == null)
+  // Red de seguridad: la opción ya no se ofrece sin una dirección comprobada,
+  // pero si quedara seleccionada, el pago no debe poder cerrarse.
+  const localNeedsAddress = isLocal && local.status !== 'available'
 
-  // La entrega local solo tiene sentido en la ciudad de la boutique. Ofrecerla
-  // a alguien de otra ciudad para después rechazarla es peor que no ofrecerla.
-  const cityMatchesLocal =
-    address.city.trim().toLowerCase().localeCompare(localCity.toLowerCase(), 'es', {
-      sensitivity: 'base',
-    }) === 0
-
+  // La entrega local SOLO aparece cuando la dirección elegida está dentro de
+  // la zona. Ofrecerla y rechazarla después es peor que no ofrecerla.
   const availableMethods = methods.filter(
-    (m) => m.kind !== 'local_delivery' || cityMatchesLocal || address.city.trim() === '',
+    (m) => m.kind !== 'local_delivery' || local.status === 'available',
   )
 
-  // Si la ciudad deja de coincidir con la entrega local, se cambia de método
-  // en vez de dejar seleccionado uno que ya no aplica.
-  useEffect(() => {
-    if (isLocal && address.city.trim() !== '' && !cityMatchesLocal) {
-      setShippingCode(methods.find((m) => m.kind === 'flat')?.code ?? methods[0]?.code ?? '')
+  const fallbackCode = methods.find((m) => m.kind === 'flat')?.code ?? methods[0]?.code ?? ''
+
+  /** Si estaba elegida la entrega local y deja de aplicar, pasa a paquetería. */
+  function dropLocalIfSelected() {
+    if (isLocal) setShippingCode(fallbackCode)
+  }
+
+  /**
+   * ¿Llega la entrega local a esta dirección?
+   *
+   * Con `conLoader`, el cálculo dura al menos ~1.8 s y pasa por dos mensajes
+   * aunque la respuesta llegue antes (y suele llegar antes: la distancia queda
+   * en caché). Es a propósito, lo pidió la boutique: una tarifa que aparece al
+   * instante parece de tabla; una que se «calcula» se lee como hecha para tu
+   * dirección, que es exactamente lo que es.
+   *
+   * Sin loader cuando solo cambia el cupón: la dirección ya se comprobó y
+   * volver a enseñar el cálculo sería teatro sin motivo.
+   */
+  async function runLocalCheck(
+    coords: { lat: number; lng: number },
+    coupon: string | null,
+    conLoader: boolean,
+  ) {
+    const seq = ++localCheckSeq.current
+    if (conLoader) {
+      setLocalCheck({ status: 'checking', step: 0 })
+      setTimeout(() => {
+        if (seq === localCheckSeq.current) {
+          setLocalCheck((s) => (s.status === 'checking' ? { status: 'checking', step: 1 } : s))
+        }
+      }, 900)
     }
-  }, [isLocal, cityMatchesLocal, address.city, methods])
+
+    const [result] = await Promise.all([
+      checkLocalDelivery({ ...coords, couponCode: coupon }),
+      conLoader ? new Promise((r) => setTimeout(r, 1800)) : null,
+    ])
+    if (seq !== localCheckSeq.current) return
+
+    if (result.available && result.distanceKm != null && result.shippingCents != null) {
+      setLocalCheck({
+        status: 'available',
+        distanceKm: result.distanceKm,
+        shippingCents: result.shippingCents,
+      })
+    } else {
+      setLocalCheck({ status: 'unavailable', distanceKm: result.distanceKm, maxKm: result.maxKm })
+      dropLocalIfSelected()
+    }
+  }
 
   /** Recotiza el resumen. La base es la única que pone precios. */
   function requote(overrides?: { shipping?: string; coupon?: string | null }) {
@@ -122,12 +183,10 @@ export function CheckoutForm({
 
       if (result.ok && result.totals) {
         setTotals(result.totals)
+        // La distancia ya la anuncia el aviso de entrega local; aquí solo
+        // queda el caso raro de un método que dejó de llegar.
         setQuoteMessage(
-          result.distanceKm != null
-            ? `A ${result.distanceKm} km de la boutique`
-            : result.totals.shippingAvailable === false
-              ? 'Ese método no llega a tu dirección'
-              : null,
+          result.totals.shippingAvailable === false ? 'Ese método no llega a tu dirección' : null,
         )
       } else {
         setQuoteMessage(result.message ?? null)
@@ -308,14 +367,20 @@ export function CheckoutForm({
                 value={address.street}
                 bias={boutique}
                 wrapperClassName="md:col-span-2"
-                onType={(street) => setAddress({ ...address, street, lat: null, lng: null })}
-                onSelect={(found) =>
+                onType={(street) => {
+                  setAddress({ ...address, street, lat: null, lng: null })
+                  dropLocalIfSelected()
+                }}
+                onSelect={(found) => {
+                  void runLocalCheck({ lat: found.lat, lng: found.lng }, appliedCoupon, true)
                   setAddress({
                     ...address,
                     street: found.street || address.street,
-                    // Si la sugerencia era solo la calle, se respeta el número
-                    // que la clienta ya hubiera escrito.
-                    extNo: found.extNo || address.extNo,
+                    // Si la sugerencia no trae número se VACÍA, no se conserva
+                    // el anterior: casi siempre es de otra calle (la clienta
+                    // cambió de dirección), y un 1100 heredado en la calle
+                    // equivocada es un paquete en la puerta equivocada.
+                    extNo: found.extNo,
                     neighborhood: found.neighborhood || address.neighborhood,
                     postalCode: found.postalCode || address.postalCode,
                     city: found.city || address.city,
@@ -323,7 +388,7 @@ export function CheckoutForm({
                     lat: found.lat,
                     lng: found.lng,
                   })
-                }
+                }}
               />
               <TextField
                 id="ext"
@@ -354,7 +419,7 @@ export function CheckoutForm({
                 maxLength={5}
                 autoComplete="postal-code"
                 value={address.postalCode}
-                onChange={(e) =>
+                onChange={(e) => {
                   setAddress({
                     ...address,
                     postalCode: e.target.value.replace(/\D/g, ''),
@@ -363,7 +428,8 @@ export function CheckoutForm({
                     lat: null,
                     lng: null,
                   })
-                }
+                  dropLocalIfSelected()
+                }}
               />
               <TextField
                 id="ciudad"
@@ -371,9 +437,10 @@ export function CheckoutForm({
                 required
                 autoComplete="address-level2"
                 value={address.city}
-                onChange={(e) =>
+                onChange={(e) => {
                   setAddress({ ...address, city: e.target.value, lat: null, lng: null })
-                }
+                  dropLocalIfSelected()
+                }}
               />
               <SelectField
                 id="estado"
@@ -418,15 +485,36 @@ export function CheckoutForm({
             Método de envío
           </legend>
 
+          {local.status === 'checking' ? (
+            <ShippingLoader step={local.step} />
+          ) : (
           <div className="flex flex-col gap-3">
+            {local.status === 'available' ? (
+              <p
+                role="status"
+                className="flex items-start gap-3 border border-primary bg-surface p-4 font-body-md text-body-md"
+              >
+                <Icon name="check_circle" size={20} className="text-accent-red shrink-0 mt-0.5" />
+                <span>
+                  Tu dirección está a {formatKm(local.distanceKm)} de la boutique: te llega con{' '}
+                  <strong className="font-medium">entrega local</strong>, el mismo día o al
+                  siguiente.
+                </span>
+              </p>
+            ) : null}
+
             {availableMethods.map((method) => {
               const isSelected = shippingCode === method.code
+              const isLocalOption = method.kind === 'local_delivery'
               return (
                 <label
                   key={method.code}
                   className={cn(
                     'flex items-center justify-between gap-4 cursor-pointer p-5 md:p-6 transition-colors',
                     isSelected ? 'border-2 border-primary' : 'border border-surface-variant',
+                    // Aparece de pronto tras el cálculo: entra con un
+                    // desvanecido corto para que se note que es nueva.
+                    isLocalOption && 'reveal-in',
                   )}
                 >
                   <span className="flex items-center gap-4">
@@ -447,17 +535,27 @@ export function CheckoutForm({
                     </span>
                   </span>
                   <span className="font-price text-price whitespace-nowrap">
-                    {isSelected ? priceLabel(totals.shippingCents, isQuoting) : methodHint(method)}
+                    {isSelected
+                      ? priceLabel(totals.shippingCents, isQuoting)
+                      : isLocalOption && local.status === 'available'
+                        ? priceLabel(local.shippingCents, false)
+                        : methodHint(method, freeShippingOverCents, totals)}
                   </span>
                 </label>
               )
             })}
           </div>
+          )}
 
-          {localNeedsAddress ? (
+          {local.status === 'unavailable' && local.distanceKm != null ? (
             <p role="status" className="font-body-md text-[13px] text-text-muted mt-4">
-              Para calcular la entrega local, escribe tu calle y elige tu dirección de las
-              sugerencias.
+              Tu dirección está a {formatKm(local.distanceKm)} de la boutique. La entrega local
+              llega hasta {local.maxKm ?? 10} km, así que tu pedido viaja por paquetería.
+            </p>
+          ) : local.status === 'idle' && !isPickup && placesEnabled ? (
+            <p className="font-body-md text-[13px] text-text-muted mt-4">
+              ¿Vives cerca de la boutique? Elige tu dirección de las sugerencias y vemos si te
+              llega la entrega local el mismo día.
             </p>
           ) : quoteMessage ? (
             <p
@@ -613,6 +711,11 @@ export function CheckoutForm({
               const code = couponInput.trim()
               setAppliedCoupon(code || null)
               requote({ coupon: code || null })
+              // Un cupón puede bajar la compra de los $2,499 y quitar la
+              // entrega local gratis: el precio de la opción se recalcula.
+              if (address.lat != null && address.lng != null) {
+                void runLocalCheck({ lat: address.lat, lng: address.lng }, code || null, false)
+              }
             }}
             className="font-label-upper text-label-upper uppercase border-b border-primary pb-2 hover:text-accent-red hover:border-accent-red transition-colors disabled:opacity-40"
           >
@@ -684,14 +787,66 @@ export function CheckoutForm({
   )
 }
 
+/** «3.1 km», o «menos de 1 km» para no decir «0.4 km» a quien vive a la vuelta. */
+function formatKm(km: number): string {
+  return km < 1 ? 'menos de 1 km' : `${km.toLocaleString('es-MX')} km`
+}
+
+/**
+ * El «cálculo» de la tarifa, en dos pasos.
+ *
+ * Esqueletos con la misma forma que las opciones que van a aparecer, para que
+ * al terminar la lista ocupe el mismo sitio y nada salte.
+ */
+function ShippingLoader({ step }: { step: 0 | 1 }) {
+  return (
+    <div role="status" aria-live="polite" className="flex flex-col gap-3">
+      <p className="flex items-center gap-3 font-body-md text-body-md">
+        <span
+          aria-hidden="true"
+          className="inline-block size-4 shrink-0 rounded-full border-2 border-surface-variant border-t-primary animate-spin"
+        />
+        {step === 0 ? 'Ubicando tu dirección…' : 'Calculando tarifas de envío…'}
+      </p>
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className="flex items-center justify-between gap-4 border border-surface-variant p-5 md:p-6 animate-pulse"
+        >
+          <span className="flex items-center gap-4">
+            <span className="size-5 rounded-full bg-outline-variant" />
+            <span className="grid gap-2">
+              <span className="block h-3 w-32 bg-outline-variant" />
+              <span className="block h-2 w-48 bg-outline-variant" />
+            </span>
+          </span>
+          <span className="block h-3 w-16 bg-outline-variant" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function priceLabel(cents: number, isQuoting: boolean): string {
   if (isQuoting) return '…'
   return cents === 0 ? 'Gratis' : formatPrice(cents, true)
 }
 
-function methodHint(method: ShippingMethod): string {
+/**
+ * El precio de un método que NO está elegido.
+ *
+ * Con la bolsa sobre el umbral de envío gratis, un método de tarifa fija
+ * cuesta cero aunque su precio de lista diga otra cosa. Sin esto, con una
+ * compra de $2,580 el estándar elegido decía «Gratis» y el express de al lado
+ * «$219» — y lo era solo hasta que la clienta lo tocaba.
+ *
+ * Es solo la etiqueta: el precio que se cobra lo recalcula la base al elegir.
+ */
+function methodHint(method: ShippingMethod, freeOver: number | null, totals: CartTotals): string {
   if (method.kind === 'pickup') return 'Gratis'
   if (method.kind === 'local_delivery') return 'Según distancia'
+  if (freeOver != null && totals.subtotalCents - totals.discountCents >= freeOver) return 'Gratis'
   return formatPrice(method.priceCents)
 }
 
