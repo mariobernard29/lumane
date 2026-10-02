@@ -302,12 +302,74 @@ function inventario(c: CargaAviso): Correo | null {
 // Venta en línea
 // ---------------------------------------------------------------------------
 
+/** Texto de un campo de la dirección, o '' si viene vacío o no es texto. */
+function campo(d: Record<string, unknown> | null, clave: string): string {
+  const v = d?.[clave]
+  return typeof v === 'string' || typeof v === 'number' ? String(v).trim() : ''
+}
+
+/**
+ * Las líneas de la dirección, como se escriben en un sobre.
+ *
+ * Párrafos y no `filas`: las filas no parten el texto (`nowrap`, para que una
+ * cifra no se corte) y una dirección larga se saldría de la pantalla del
+ * teléfono, que es donde se lee este correo.
+ */
+function lineasDireccion(d: Record<string, unknown> | null): string[] {
+  const calle = [campo(d, 'street'), campo(d, 'ext_no')].filter(Boolean).join(' ')
+  const interior = campo(d, 'int_no')
+  const ciudad = [campo(d, 'postal_code'), campo(d, 'city')].filter(Boolean).join(' ')
+  // Google a veces ya escribe «Colonia Irrigación»; sin esta comprobación
+  // saldría «Col. Colonia Irrigación».
+  const colonia = campo(d, 'neighborhood')
+  return [
+    [calle, interior ? `int. ${interior}` : ''].filter(Boolean).join(', '),
+    colonia ? (/^col(\.|onia)\s/i.test(colonia) ? colonia : `Col. ${colonia}`) : '',
+    [ciudad, campo(d, 'state')].filter(Boolean).join(', '),
+  ].filter(Boolean)
+}
+
+function parrafos(lineas: string[], extra = ''): string {
+  return `${lineas
+    .map(
+      (l) =>
+        `<p style="margin:0;padding:2px 0;font-family:${TEXTO};font-size:14px;line-height:1.5;color:${TINTA};">${esc(l)}</p>`,
+    )
+    .join('')}${extra}`
+}
+
 function ventaEnLinea(c: CargaAviso): Correo | null {
   const p = c.pedido
   if (!p) return null
 
   const clienta = [p.customer?.first_name, p.customer?.last_name].filter(Boolean).join(' ').trim()
-  const envio = p.order.shipping_address as Record<string, unknown> | null
+  const dir = p.order.shipping_address as Record<string, unknown> | null
+  const metodo = p.order.shipping_method as Record<string, unknown> | null
+
+  const tipoEnvio = campo(metodo, 'name') || 'Sin método'
+  // Para recoger no hay a dónde ir: el pedido guarda la dirección de la
+  // boutique como relleno (ver `buildOrderInput` en el checkout) y enseñarla
+  // aquí haría pensar que hay que mandarlo a algún sitio.
+  const recoge = campo(metodo, 'kind') === 'pickup'
+  const telefono = campo(dir, 'phone')
+  const referencias = campo(dir, 'delivery_notes')
+  const lineas = recoge ? [] : lineasDireccion(dir)
+
+  // Enlace al punto exacto que eligió la clienta: para la entrega local es lo
+  // que abre quien reparte, sin volver a teclear la dirección.
+  const lat = Number(dir?.lat)
+  const lng = Number(dir?.lng)
+  const mapa =
+    !recoge && Number.isFinite(lat) && Number.isFinite(lng) && dir?.lat != null
+      ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+      : null
+
+  const pago = p.payments[0]
+  const medio = pago ? (NOMBRE_MEDIO[pago.method] ?? pago.method) : '—'
+  // Una transferencia (o un OXXO/SPEI de Stripe) llega «pendiente»: hay que
+  // esperar el pago antes de preparar el pedido, y eso es lo primero que tiene
+  // que saber quien lo lee.
+  const pagoPendiente = p.order.payment_status !== 'paid'
 
   const contenido = `
     ${cabecera('Venta en línea', `Pedido ${p.order.number}`, pesos(p.order.total_cents))}
@@ -317,14 +379,39 @@ function ventaEnLinea(c: CargaAviso): Correo | null {
       filas([
         ['Nombre', clienta || 'Sin nombre'],
         ['Correo', p.customer?.email ?? '—'],
-        ...(envio
-          ? ([
-              ['Ciudad', String(envio.city ?? '—')],
-              ['Estado', String(envio.state ?? '—')],
-            ] as [string, string][])
-          : []),
+        ...(telefono ? ([['Teléfono', telefono]] as [string, string][]) : []),
       ]),
     )}
+
+    ${bloque(
+      'Entrega',
+      filas([
+        ['Tipo de envío', tipoEnvio, true],
+        ['Costo de envío', Number(p.order.shipping_cents ?? 0) > 0 ? pesos(p.order.shipping_cents) : 'Sin costo'],
+      ]) +
+        (recoge
+          ? parrafos(['La clienta recoge en la boutique.'])
+          : `<div style="padding-top:12px;">${parrafos(
+              [
+                ...(campo(dir, 'recipient') ? [`Recibe: ${campo(dir, 'recipient')}`] : []),
+                ...lineas,
+                ...(referencias ? [`Referencias: ${referencias}`] : []),
+              ],
+              mapa
+                ? `<p style="margin:10px 0 0 0;font-family:${TEXTO};font-size:14px;"><a href="${esc(mapa)}" style="color:${TINTA};text-decoration:underline;">Ver en el mapa</a></p>`
+                : '',
+            )}</div>`),
+    )}
+
+    ${bloque(
+      'Pago',
+      filas([
+        ['Forma de pago', medio],
+        ['Estado', pagoPendiente ? 'Pendiente: esperar el pago' : 'Pagado', pagoPendiente],
+      ]),
+    )}
+
+    ${p.order.note ? bloque('Nota de la clienta', parrafos([p.order.note])) : ''}
 
     ${bloque(
       'Qué se llevó',
@@ -362,7 +449,20 @@ function ventaEnLinea(c: CargaAviso): Correo | null {
     `Total: ${pesos(p.order.total_cents)}`,
     '',
     `Clienta: ${clienta || 'Sin nombre'} <${p.customer?.email ?? 'sin correo'}>`,
-    ...(envio ? [`Envío a: ${String(envio.city ?? '')}, ${String(envio.state ?? '')}`] : []),
+    ...(telefono ? [`Teléfono: ${telefono}`] : []),
+    '',
+    `Tipo de envío: ${tipoEnvio}`,
+    ...(recoge
+      ? ['La clienta recoge en la boutique.']
+      : [
+          ...(campo(dir, 'recipient') ? [`Recibe: ${campo(dir, 'recipient')}`] : []),
+          ...lineas,
+          ...(referencias ? [`Referencias: ${referencias}`] : []),
+          ...(mapa ? [`Mapa: ${mapa}`] : []),
+        ]),
+    '',
+    `Pago: ${medio}${pagoPendiente ? ' (PENDIENTE: esperar el pago)' : ''}`,
+    ...(p.order.note ? [`Nota: ${p.order.note}`] : []),
     '',
     'Piezas:',
     ...p.lines.map((l) => `  ${l.product_name}${l.variant_title ? ` (${l.variant_title})` : ''} x${l.quantity}  ${pesos(l.total_cents)}`),

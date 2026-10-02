@@ -187,17 +187,39 @@ function totales(o: Pedido): string {
   </table>`
 }
 
+/**
+ * Cómo contactar a la boutique.
+ *
+ * **No dice «contéstanos a este correo».** El remitente (`EMAIL_FROM`,
+ * @lumane.mx) es solo de envío y no recibe correo; se ofrecen el correo de
+ * contacto de Ajustes y el WhatsApp. Por si alguien pulsa «Responder» de
+ * todos modos, el envío lleva `reply_to` al correo de contacto (index.ts).
+ *
+ * Sin respaldo inventado: si Ajustes no tiene correo, no se pone ninguno. El
+ * respaldo de antes era contacto@lumane.mx, que es justo el que no recibe.
+ */
+function contacto(store: Carga['store']): { correo: string | null; wa: string | null } {
+  return {
+    correo: store?.contact_email?.trim() || null,
+    wa: store?.whatsapp?.trim() || null,
+  }
+}
+
 function pie(store: Carga['store']): string {
-  const correo = store?.contact_email ?? 'contacto@lumane.mx'
-  const wa = store?.whatsapp
+  const { correo, wa } = contacto(store)
+  const enlace = (href: string, texto: string) =>
+    `<a href="${esc(href)}" style="color:${TINTA};text-decoration:underline;">${esc(texto)}</a>`
+  const medios = [
+    correo ? enlace(`mailto:${correo}`, correo) : null,
+    wa ? `WhatsApp ${enlace(`https://wa.me/${wa.replace(/\D/g, '')}`, wa)}` : null,
+  ].filter(Boolean)
   return `
   <tr><td style="padding:36px 40px 44px 40px;border-top:1px solid ${LINEA};text-align:center;">
-    <p style="margin:0 0 6px 0;font-family:${TEXTO};font-size:13px;line-height:1.7;color:${TENUE};">
-      ¿Alguna duda? Contéstanos a este correo o escríbenos a
-      <a href="mailto:${esc(correo)}" style="color:${TINTA};text-decoration:underline;">${esc(correo)}</a>${
-        wa ? ` · WhatsApp <a href="https://wa.me/${esc(String(wa).replace(/\D/g, ''))}" style="color:${TINTA};text-decoration:underline;">${esc(wa)}</a>` : ''
-      }.
-    </p>
+    ${
+      medios.length
+        ? `<p style="margin:0 0 6px 0;font-family:${TEXTO};font-size:13px;line-height:1.7;color:${TENUE};">¿Alguna duda? Escríbenos a ${medios.join(' · ')}.</p>`
+        : ''
+    }
     ${store?.hours ? `<p style="margin:0 0 10px 0;font-family:${TEXTO};font-size:12px;color:${TENUE};">${esc(store.hours)}</p>` : ''}
     <p style="margin:0;font-family:${TEXTO};font-size:11px;color:${TENUE};">${esc(store?.copyright ?? '© LUMANE')}</p>
   </td></tr>`
@@ -218,6 +240,12 @@ function envoltorio(contenido: string, store: Carga['store']): string {
 </body></html>`
 }
 
+function dudasEnTexto(store: Carga['store']): string[] {
+  const { correo, wa } = contacto(store)
+  const medios = [correo, wa ? `WhatsApp ${wa}` : null].filter(Boolean)
+  return medios.length ? [`¿Alguna duda? Escríbenos a ${medios.join(' · ')}`] : []
+}
+
 /** La versión en texto plano no es un extra: sin ella los filtros puntúan peor. */
 function aTexto(titulo: string, entradilla: string, c: Carga): string {
   const l = c.lines
@@ -236,7 +264,7 @@ function aTexto(titulo: string, entradilla: string, c: Carga): string {
     `Envío: ${Number(c.order.shipping_cents ?? 0) > 0 ? pesos(c.order.shipping_cents) : 'Sin costo'}`,
     `Total: ${pesos(c.order.total_cents)} (IVA incluido: ${pesos(c.order.tax_cents)})`,
     '',
-    `Dudas: ${c.store?.contact_email ?? 'contacto@lumane.mx'}`,
+    ...dudasEnTexto(c.store),
   ].join('\n')
 }
 
@@ -438,7 +466,7 @@ export function plantillaPara(topic: string, aEstado: string | null, c: Carga): 
     case 'delivered': {
       const correo = armar(
         'Tu pedido fue entregado',
-        `${saludo}. Esperamos que te encante. Si algo no quedó como esperabas, contéstanos a este correo.`,
+        `${saludo}. Esperamos que te encante. Si algo no quedó como esperabas, escríbenos y lo resolvemos.`,
         c,
       )
       correo.asunto = `Pedido ${c.order.number} entregado · LUMANE`

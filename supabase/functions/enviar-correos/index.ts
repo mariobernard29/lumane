@@ -40,6 +40,12 @@ async function mandarPorResend(
   asunto: string,
   html: string,
   texto: string,
+  /**
+   * A dónde va la respuesta si la clienta pulsa «Responder». El remitente
+   * (`EMAIL_FROM`, @lumane.mx) es solo de envío y no recibe correo: sin esto,
+   * una respuesta se perdería sin que nadie se enterara.
+   */
+  responderA?: string | null,
 ): Promise<string> {
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -47,7 +53,14 @@ async function mandarPorResend(
       authorization: `Bearer ${RESEND_API_KEY}`,
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ from: EMAIL_FROM, to: [destinatario], subject: asunto, html, text: texto }),
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      to: [destinatario],
+      subject: asunto,
+      html,
+      text: texto,
+      ...(responderA ? { reply_to: responderA } : {}),
+    }),
   })
 
   const cuerpo = await r.text()
@@ -131,7 +144,13 @@ async function procesar(ev: Evento): Promise<Resultado> {
     }
   }
 
-  const id = await mandarPorResend(destinatario, correo.asunto, correo.html, correo.texto)
+  const id = await mandarPorResend(
+    destinatario,
+    correo.asunto,
+    correo.html,
+    correo.texto,
+    c.store?.contact_email?.trim() || null,
+  )
   return { estado: 'enviado', detalle: `resend:${id}`, ref: id }
 }
 
