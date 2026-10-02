@@ -165,12 +165,38 @@ export default async function ProductPage({ params }: PageProps) {
               {
                 number: '02',
                 title: 'Composición y cuidado',
+                // Lo capturado para ESTA prenda (desde la caja o el admin). Sin
+                // cuidados capturados se quedan las indicaciones generales, que
+                // valen para casi todo lo que vende la boutique.
                 content: (
-                  <ul className="list-disc space-y-2 font-body-md text-body-md text-secondary marker:text-accent-red">
-                    <li>Lavar a mano o en ciclo delicado, con agua fría.</li>
-                    <li>No usar blanqueador. Planchar a temperatura baja del revés.</li>
-                    <li>Secar a la sombra, en horizontal, para conservar la forma.</li>
-                  </ul>
+                  <div className="space-y-4 font-body-md text-body-md text-secondary">
+                    {product.materials.length > 0 ? (
+                      <div className="space-y-1">
+                        <p className="font-label-upper text-label-upper text-primary">Composición</p>
+                        <ul className="space-y-1">
+                          {product.materials.map((m) => (
+                            <li key={m}>{m}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    <div className="space-y-1">
+                      {product.materials.length > 0 ? (
+                        <p className="font-label-upper text-label-upper text-primary">Cuidados</p>
+                      ) : null}
+                      <ul className="list-disc space-y-2 marker:text-accent-red">
+                        {product.care.length > 0 ? (
+                          product.care.map((c) => <li key={c}>{c}</li>)
+                        ) : (
+                          <>
+                            <li>Lavar a mano o en ciclo delicado, con agua fría.</li>
+                            <li>No usar blanqueador. Planchar a temperatura baja del revés.</li>
+                            <li>Secar a la sombra, en horizontal, para conservar la forma.</li>
+                          </>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
                 ),
               },
               {

@@ -60,6 +60,8 @@ export interface ProductoUI {
   short_description: string | null
   long_description: string | null
   fit_note: string | null
+  materials: string | null
+  care: string | null
   brand: string | null
   status: string
   is_online: boolean
@@ -140,6 +142,18 @@ export function Ficha({
           hint="«Queda holgado», «pide una talla menos». Lo que evita una devolución."
         >
           <TextInput id="fitNote" name="fitNote" defaultValue={producto.fit_note ?? ''} />
+        </FormRow>
+
+        <FormRow label="Composición" htmlFor="materials" hint="Un material por renglón: «Algodón 95%».">
+          <TextArea id="materials" name="materials" defaultValue={producto.materials ?? ''} />
+        </FormRow>
+
+        <FormRow
+          label="Cuidados"
+          htmlFor="care"
+          hint="Un cuidado por renglón. Vacío, la ficha enseña las indicaciones generales."
+        >
+          <TextArea id="care" name="care" defaultValue={producto.care ?? ''} />
         </FormRow>
 
         <FormRow label="Marca" htmlFor="brand">

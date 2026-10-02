@@ -67,3 +67,17 @@ export { buildCorteTicket, type CorteData, type CorteMethod } from './corte.ts'
 export { buildTestTicket, leerTicket, ticketComoTexto, type LineaLeída } from './prueba.ts'
 
 export { LOGO_TICKET } from './logo-ticket.ts'
+
+export {
+  combinaciones,
+  normalizarCodigo,
+  planearVariantes,
+  PRESETS_OPCIONES,
+  sinAcentos,
+  skuDeVariante,
+  skusRepetidos,
+  sugerirCodigo,
+  type OpcionProducto,
+  type ValorOpcion,
+  type VarianteEditable,
+} from './variantes.ts'

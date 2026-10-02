@@ -56,6 +56,10 @@ export interface ProductDetail {
   longDescription: string | null
   /** "La modelo mide 1.75 m y usa talla S." — evita devoluciones por talla. */
   fitNote: string | null
+  /** Composición, un renglón por material. Vacío = no se capturó. */
+  materials: string[]
+  /** Cuidados, un renglón por indicación. Vacío = no se capturó. */
+  care: string[]
   brand: string | null
   seoTitle: string | null
   seoDescription: string | null
@@ -88,7 +92,7 @@ export const getProduct = cache(async (slug: string): Promise<ProductDetail | nu
     .from('products')
     .select(
       `
-      id, slug, name, short_description, long_description, fit_note, brand,
+      id, slug, name, short_description, long_description, fit_note, materials, care, brand,
       seo_title, seo_description,
       product_images ( storage_path, alt_text, position ),
       product_options ( id, name, position,
@@ -161,6 +165,8 @@ export const getProduct = cache(async (slug: string): Promise<ProductDetail | nu
     shortDescription: data.short_description,
     longDescription: data.long_description,
     fitNote: data.fit_note,
+    materials: renglones(data.materials),
+    care: renglones(data.care),
     brand: data.brand,
     seoTitle: data.seo_title,
     seoDescription: data.seo_description,
@@ -227,4 +233,9 @@ async function getProductReviews(productId: string): Promise<ProductReview[]> {
     // El sello no lo escribe quien reseña: lo respalda un pedido real.
     isVerified: r.order_id !== null,
   }))
+}
+
+/** Texto de un campo multilínea a renglones, sin vacíos. */
+function renglones(texto: string | null): string[] {
+  return (texto ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
 }

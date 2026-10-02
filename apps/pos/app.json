@@ -39,6 +39,14 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lumane usa tus fotos para agregarlas a las prendas del catálogo.",
+          "cameraPermission": "Lumane usa la cámara para fotografiar las prendas del catálogo.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/monograma-hueso.png",

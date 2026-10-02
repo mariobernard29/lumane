@@ -20,7 +20,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
   const [productoRes, categoriasRes, stockRes] = await Promise.all([
     supabase
       .from('products')
-      .select('id, name, slug, short_description, long_description, fit_note, brand, status, is_online, primary_category_id, seo_title, seo_description, product_variants(id, title, sku, barcode, price_cents, compare_at_price_cents, is_active, position), product_images(id, storage_path, alt_text, position)')
+      .select('id, name, slug, short_description, long_description, fit_note, materials, care, brand, status, is_online, primary_category_id, seo_title, seo_description, product_variants(id, title, sku, barcode, price_cents, compare_at_price_cents, is_active, position), product_images(id, storage_path, alt_text, position)')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('categories').select('id, name').order('position'),
@@ -46,6 +46,8 @@ export default async function ProductoPage({ params }: { params: Promise<{ id: s
     short_description: p.short_description,
     long_description: p.long_description,
     fit_note: p.fit_note,
+    materials: p.materials,
+    care: p.care,
     brand: p.brand,
     status: p.status,
     is_online: p.is_online,

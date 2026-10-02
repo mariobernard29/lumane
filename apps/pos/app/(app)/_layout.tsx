@@ -26,6 +26,7 @@ interface Modulo {
     | '/venta'
     | '/caja'
     | '/pedidos'
+    | '/productos'
     | '/historial'
     | '/inventario'
     | '/clientes'
@@ -44,6 +45,8 @@ const MODULOS: Modulo[] = [
   { href: '/venta', label: 'Venta', permission: 'sales.create' },
   { href: '/caja', label: 'Caja', permission: 'register.open' },
   { href: '/pedidos', label: 'Pedidos', permission: 'orders.read', contador: true },
+  // El catálogo: dueña y encargada. La cajera vende lo que hay, no lo da de alta.
+  { href: '/productos', label: 'Productos', permission: 'inventory.write' },
   { href: '/historial', label: 'Historial', permission: 'orders.read' },
   { href: '/inventario', label: 'Inventario', permission: 'inventory.read' },
   { href: '/clientes', label: 'Clientes', permission: 'customers.read' },

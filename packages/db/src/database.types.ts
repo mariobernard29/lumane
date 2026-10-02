@@ -1742,6 +1742,7 @@ export type Database = {
       }
       product_option_values: {
         Row: {
+          code: string | null
           hex: string | null
           id: string
           option_id: string
@@ -1749,6 +1750,7 @@ export type Database = {
           value: string
         }
         Insert: {
+          code?: string | null
           hex?: string | null
           id?: string
           option_id: string
@@ -1756,6 +1758,7 @@ export type Database = {
           value: string
         }
         Update: {
+          code?: string | null
           hex?: string | null
           id?: string
           option_id?: string
@@ -2043,12 +2046,15 @@ export type Database = {
         Row: {
           archived_at: string | null
           brand: string | null
+          care: string | null
+          code: string | null
           created_at: string
           created_by: string | null
           fit_note: string | null
           id: string
           is_online: boolean
           long_description: string | null
+          materials: string | null
           name: string
           primary_category_id: string | null
           published_at: string | null
@@ -2063,12 +2069,15 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           brand?: string | null
+          care?: string | null
+          code?: string | null
           created_at?: string
           created_by?: string | null
           fit_note?: string | null
           id?: string
           is_online?: boolean
           long_description?: string | null
+          materials?: string | null
           name: string
           primary_category_id?: string | null
           published_at?: string | null
@@ -2083,12 +2092,15 @@ export type Database = {
         Update: {
           archived_at?: string | null
           brand?: string | null
+          care?: string | null
+          code?: string | null
           created_at?: string
           created_by?: string | null
           fit_note?: string | null
           id?: string
           is_online?: boolean
           long_description?: string | null
+          materials?: string | null
           name?: string
           primary_category_id?: string | null
           published_at?: string | null
@@ -2985,6 +2997,17 @@ export type Database = {
         Returns: undefined
       }
       pos_create_return: { Args: { p_payload: Json }; Returns: Json }
+      pos_delete_product: { Args: { p_product_id: string }; Returns: Json }
+      pos_save_category: {
+        Args: {
+          p_id: string
+          p_is_visible?: boolean
+          p_name: string
+          p_parent_id?: string
+        }
+        Returns: Json
+      }
+      pos_save_product: { Args: { p_payload: Json }; Returns: Json }
       pos_create_sale: { Args: { p_payload: Json }; Returns: Json }
       pos_search_variants: {
         Args: { p_limit?: number; p_location_id?: string; p_query?: string }
