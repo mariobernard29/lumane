@@ -14,7 +14,7 @@
  *     20:30 aparecería como de las 03:30 del día siguiente.
  */
 
-import { esc, pesos, DISPLAY, FONDO, LINEA, PAPEL, TENUE, TEXTO, TINTA, type Carga, type Correo } from './plantillas.ts'
+import { esc, logo, pesos, DISPLAY, FONDO, LINEA, PAPEL, TENUE, TEXTO, TINTA, type Carga, type Correo } from './plantillas.ts'
 
 export interface Sesion {
   id: string
@@ -95,8 +95,11 @@ function envoltorio(contenido: string, store: CargaAviso['store']): string {
 }
 
 function cabecera(eyebrow: string, titulo: string, cifra?: string): string {
+  // Más chico y a la izquierda que en los de clientas: aquí el protagonista
+  // es la cifra, y el logotipo solo dice de qué tienda viene el aviso.
   return `
-  <tr><td style="padding:40px 40px 0 40px;">
+  <tr><td style="padding:32px 40px 0 40px;">${logo(110, 'left')}</td></tr>
+  <tr><td style="padding:24px 40px 0 40px;">
     <div style="font-family:${TEXTO};font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${TENUE};">${esc(eyebrow)}</div>
     <h1 style="margin:10px 0 0 0;font-family:${DISPLAY};font-size:30px;line-height:1.15;font-weight:400;color:${TINTA};">${esc(titulo)}</h1>
     ${cifra ? `<div style="margin-top:8px;font-family:${TEXTO};font-size:28px;font-weight:600;color:${TINTA};">${esc(cifra)}</div>` : ''}

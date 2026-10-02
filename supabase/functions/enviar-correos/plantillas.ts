@@ -18,6 +18,39 @@ export const TENUE = '#6B6B68'
 export const DISPLAY = "'Instrument Serif', Georgia, serif"
 export const TEXTO = "'Figtree', 'Helvetica Neue', Arial, sans-serif"
 
+/**
+ * El logotipo, servido desde el bucket público `content` de Storage.
+ *
+ * Una URL pública y FIJA, no un adjunto ni un `data:`: Gmail bloquea las
+ * imágenes en base64 y un adjunto en línea aparece como clip en algunos
+ * clientes. Fija porque un correo ya enviado sigue pidiendo esa dirección
+ * años después — reemplazar el archivo actualiza los correos viejos; moverlo
+ * los dejaría con la imagen rota.
+ *
+ * El PNG mide 480 × 77 y se pinta a 160 × 26: el triple, para que se vea
+ * nítido en pantallas de teléfono. Fondo blanco y no transparente, porque
+ * algunas versiones de Outlook pintan de negro la transparencia.
+ *
+ * Se lee `Deno` por `globalThis` para que este módulo también cargue fuera de
+ * la Edge Function (en Node, para previsualizar los correos).
+ */
+const SUPABASE_URL =
+  (globalThis as { Deno?: { env: { get(k: string): string | undefined } } }).Deno?.env.get('SUPABASE_URL') ??
+  'https://izyoixhffjjodzizkbqk.supabase.co'
+export const LOGO_URL = `${SUPABASE_URL}/storage/v1/object/public/content/correo/logo-lumane.png`
+
+/**
+ * `alt` con el nombre de la marca: si el cliente de correo bloquea las
+ * imágenes —Outlook lo hace por defecto con remitentes nuevos— se lee
+ * «LUMANE» en su lugar, que es lo que decía la cabecera antes del logotipo.
+ */
+export function logo(ancho: number, alinear: 'center' | 'left' = 'center'): string {
+  const alto = Math.round((ancho * 77) / 480)
+  return `<img src="${LOGO_URL}" width="${ancho}" height="${alto}" alt="LUMANE" style="display:block;${
+    alinear === 'center' ? 'margin:0 auto;' : ''
+  }border:0;outline:none;text-decoration:none;height:auto;width:${ancho}px;max-width:100%;font-family:${TEXTO};font-size:13px;letter-spacing:0.28em;color:${TINTA};">`
+}
+
 export interface Linea {
   product_name: string
   variant_title: string | null
@@ -137,8 +170,8 @@ function direccion(a: Record<string, unknown> | null): string {
 
 function cabecera(titulo: string, entradilla: string): string {
   return `
-  <tr><td style="padding:48px 40px 8px 40px;text-align:center;">
-    <div style="font-family:${TEXTO};font-size:13px;letter-spacing:0.28em;text-transform:uppercase;color:${TINTA};font-weight:500;">LUMANE</div>
+  <tr><td style="padding:44px 40px 8px 40px;text-align:center;">
+    ${logo(160)}
   </td></tr>
   <tr><td style="padding:24px 40px 0 40px;text-align:center;">
     <h1 style="margin:0;font-family:${DISPLAY};font-size:34px;line-height:1.15;font-weight:400;color:${TINTA};">${esc(titulo)}</h1>
