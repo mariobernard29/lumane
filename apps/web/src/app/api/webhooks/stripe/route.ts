@@ -1,6 +1,7 @@
 import type Stripe from 'stripe'
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { confirmFromPaymentIntent } from '@/lib/stripe/confirm'
 import { getStripe, isStripeConfigured } from '@/lib/stripe/server'
 import { createAdminSupabase } from '@/lib/supabase/server'
 
@@ -92,57 +93,11 @@ async function onPaymentSucceeded(
   intent: Stripe.PaymentIntent,
   state: 'succeeded' | 'pending' = 'succeeded',
 ): Promise<void> {
-  const meta = intent.metadata ?? {}
-  const cartToken = meta.cart_token
-  if (!cartToken) {
-    console.error(`[webhook] ${intent.id} sin cart_token en metadata: no se puede cerrar`)
-    return
-  }
-
-  // El RPC recibe `jsonb`; los tipos generados lo expresan como `Json`.
-  let address: Record<string, string | number | null> = {}
-  try {
-    address = meta.address
-      ? (JSON.parse(meta.address) as Record<string, string | number | null>)
-      : {}
-  } catch {
-    console.error(`[webhook] ${intent.id} con dirección ilegible en metadata`)
-  }
-
-  const admin = createAdminSupabase()
-
-  const { data, error } = await admin.rpc('confirm_online_order', {
-    p_cart_token: cartToken,
-    p_email: meta.email ?? intent.receipt_email ?? undefined,
-    p_first_name: meta.first_name ?? undefined,
-    p_last_name: meta.last_name || undefined,
-    p_phone: (address.phone as string | undefined) ?? undefined,
-    p_shipping_address: address,
-    p_shipping_method_code: meta.shipping_method_code ?? undefined,
-    p_payment: {
-      method: 'stripe',
-      // El importe que Stripe cobró de verdad, no el que diga el metadata.
-      amount_cents: intent.amount_received > 0 ? intent.amount_received : intent.amount,
-      status: state,
-      provider: 'stripe',
-      provider_payment_id: intent.id,
-      reference: intent.latest_charge ? String(intent.latest_charge) : null,
-    },
-    p_distance_meters: meta.distance_meters ? Number(meta.distance_meters) : undefined,
-    p_coupon_code: meta.coupon_code || undefined,
-    p_accepts_marketing: meta.accepts_marketing === '1',
-  })
-
-  if (error) {
-    // Se relanza para que la respuesta sea 500 y Stripe reintente: el dinero
-    // ya se movió y perder el pedido no es una opción.
-    throw new Error(`confirm_online_order: ${error.message}`)
-  }
-
-  const result = data as unknown as { order_number: string; already_processed: boolean }
+  const result = await confirmFromPaymentIntent(intent, state)
+  if (!result) return
   console.log(
-    `[webhook] ${intent.id} → pedido ${result.order_number}` +
-      (result.already_processed ? ' (ya estaba registrado)' : ''),
+    `[webhook] ${intent.id} → pedido ${result.orderNumber}` +
+      (result.alreadyProcessed ? ' (ya estaba registrado)' : ''),
   )
 }
 

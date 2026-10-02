@@ -7,6 +7,7 @@ import {
   type PlaceOrderInput,
 } from '@/actions/checkout'
 import { readCartToken } from '@/lib/cart/session'
+import { confirmFromPaymentIntent } from '@/lib/stripe/confirm'
 import { getStripe, isStripeConfigured, toStripeAmount } from '@/lib/stripe/server'
 import { createServerSupabase } from '@/lib/supabase/server'
 
@@ -68,7 +69,8 @@ export async function startCardPayment(input: PlaceOrderInput): Promise<CardPaym
   }
 
   const amountCents = quote.totals.totalCents
-  const distanceMeters = quote.distanceKm != null ? Math.round(quote.distanceKm * 1000) : null
+  // Los metros exactos, no `distanceKm × 1000`: ver `QuoteResult.distanceMeters`.
+  const distanceMeters = quote.distanceMeters ?? null
 
   // ---- 3. PaymentIntent -----------------------------------------------------
   try {
@@ -163,6 +165,19 @@ export async function findOrderByPaymentIntent(
 ): Promise<{ orderNumber: string; guestToken: string | null } | null> {
   if (!/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId)) return null
 
+  const found = await lookupOrder(paymentIntentId)
+  if (found) return found
+
+  // Sin pedido todavía. Si el webhook ya debió llegar y no llegó, se le
+  // pregunta a Stripe directamente y se registra con la misma función que usa
+  // el webhook (ver `confirmFromPaymentIntent`).
+  if (await reconcileWithStripe(paymentIntentId)) return lookupOrder(paymentIntentId)
+  return null
+}
+
+async function lookupOrder(
+  paymentIntentId: string,
+): Promise<{ orderNumber: string; guestToken: string | null } | null> {
   const supabase = await createServerSupabase()
   const { data } = await supabase.rpc('get_order_by_payment_intent', {
     p_provider_payment_id: paymentIntentId,
@@ -173,4 +188,47 @@ export async function findOrderByPaymentIntent(
   if (!row?.order_number) return null
 
   return { orderNumber: row.order_number, guestToken: row.guest_token }
+}
+
+/**
+ * Lo que dio al webhook este margen para llegar primero. Normalmente llega en
+ * uno o dos segundos; antes de esto la pantalla solo espera, para no pedirle
+ * a Stripe el mismo PaymentIntent en cada sondeo de una compra que va bien.
+ */
+const MARGEN_WEBHOOK_S = 8
+
+/**
+ * Registra el pedido si Stripe dice que el cobro ocurrió.
+ *
+ * Seguro aunque lo dispare el navegador: el navegador solo aporta el ID, y el
+ * estado, el importe y los datos del pedido se leen de Stripe con la llave
+ * secreta. Un ID inventado no existe en Stripe; uno real sin cobrar no está
+ * en `succeeded`.
+ */
+async function reconcileWithStripe(paymentIntentId: string): Promise<boolean> {
+  if (!isStripeConfigured()) return false
+
+  try {
+    const intent = await getStripe().paymentIntents.retrieve(paymentIntentId)
+
+    const edad = Date.now() / 1000 - intent.created
+    if (edad < MARGEN_WEBHOOK_S) return false
+
+    const state =
+      intent.status === 'succeeded' ? 'succeeded'
+      : intent.status === 'processing' ? 'pending'
+      : null
+    if (!state) return false
+
+    const result = await confirmFromPaymentIntent(intent, state)
+    if (result && !result.alreadyProcessed) {
+      // Que quede rastro: si esto aparece en producción, el webhook no está
+      // llegando y hay que revisar su configuración en Stripe.
+      console.warn(`[pago] ${intent.id} → pedido ${result.orderNumber} registrado SIN webhook`)
+    }
+    return result != null
+  } catch (error) {
+    console.error(`[pago] no se pudo conciliar ${paymentIntentId} con Stripe:`, error)
+    return false
+  }
 }
