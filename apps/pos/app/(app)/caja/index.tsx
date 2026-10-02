@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { formatPrice, parseAmountToCents } from '@lumane/core'
+import { formatPrice, NOMBRE_MEDIO, parseAmountToCents } from '@lumane/core'
+import { errorMessage } from '@lumane/db'
 
+import { cargarImpresora, hayImpresora, preferencias, useImpresora } from '@/features/printer/impresora'
+import { imprimirCorte } from '@/features/printer/tickets'
 import { useSession, useStaff } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/ui/Button'
@@ -18,6 +21,9 @@ import { color, s, size, space, text } from '@/theme'
  * la base sabe que debería haber y congela el resultado. Si el cálculo viviera
  * en la tablet, dos versiones del APK podrían cuadrar la caja de dos formas
  * distintas — y la diferencia se descubriría meses después, en la contabilidad.
+ *
+ * Con impresora, el corte sale en papel: parcial durante el turno (no cierra
+ * nada), el definitivo al cerrar, y los anteriores se pueden reimprimir.
  */
 
 interface Resumen {
@@ -37,22 +43,39 @@ interface Resumen {
   cash_out_cents: number
 }
 
-const NOMBRE_MEDIO: Record<string, string> = {
-  cash: 'Efectivo',
-  card: 'Tarjeta',
-  transfer: 'Transferencia',
-  stripe: 'Tarjeta (en línea)',
-  store_credit: 'Saldo a favor',
+interface CorteAnterior {
+  id: string
+  opened_at: string
+  closed_at: string
+  closed_by_name: string | null
+  difference_cents: number | null
 }
+
+const FECHA_CORTE = new Intl.DateTimeFormat('es-MX', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+})
 
 export default function Caja() {
   const staff = useStaff()
   const { refresh, can } = useSession()
+  // Solo para repintar cuando cambia la impresora elegida.
+  useImpresora()
 
   const [resumen, setResumen] = useState<Resumen | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
+
+  // El corte recién cerrado: se enseña antes de volver a «Abrir el día», que
+  // si no la cajera cierra y no ve en ningún sitio cómo quedó.
+  const [cerrado, setCerrado] = useState<Resumen | null>(null)
+  const [anteriores, setAnteriores] = useState<CorteAnterior[]>([])
+  const [imprimiendo, setImprimiendo] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
 
   const [fondo, setFondo] = useState('')
   const [contado, setContado] = useState('')
@@ -82,15 +105,50 @@ export default function Caja() {
     void cargar()
   }, [cargar])
 
+  const cargarAnteriores = useCallback(async () => {
+    await cargarImpresora()
+    if (!hayImpresora()) return
+    const { data } = await supabase.rpc('list_register_sessions', { p_limit: 10 })
+    setAnteriores((data as unknown as CorteAnterior[] | null) ?? [])
+  }, [])
+
+  useEffect(() => {
+    if (!hayTurno) void cargarAnteriores()
+  }, [hayTurno, cargarAnteriores])
+
+  /** `clave` identifica qué botón está imprimiendo, para su spinner. */
+  async function imprimir(clave: string, sessionId: string | null, reimpresion: boolean) {
+    setImprimiendo(clave)
+    setAviso(null)
+    try {
+      await imprimirCorte(sessionId, { reimpresion })
+      setAviso('Corte impreso.')
+    } catch (e) {
+      setAviso(errorMessage(e as { message?: string }))
+    } finally {
+      setImprimiendo(null)
+    }
+  }
+
   async function llamar(fn: 'open_register' | 'add_cash_movement' | 'close_register', args: object) {
     setOcupado(true)
     setError(null)
-    const { error: fallo } = await supabase.rpc(fn, args as never)
+    setAviso(null)
+    const { data, error: fallo } = await supabase.rpc(fn, args as never)
     setOcupado(false)
 
     if (fallo) {
       setError(fallo.message)
       return false
+    }
+
+    if (fn === 'close_register') {
+      const corte = data as unknown as Resumen
+      setCerrado(corte)
+      setContado('')
+      if (hayImpresora() && preferencias().imprimirCorte) {
+        void imprimir('cierre', corte.session.id, false)
+      }
     }
 
     // El turno abierto vive en el perfil, del que depende la pantalla de venta
@@ -106,6 +164,65 @@ export default function Caja() {
       <View style={[s.screen, s.center]}>
         <ActivityIndicator color={color.primary} size="large" />
       </View>
+    )
+  }
+
+  // ---- Recién cerrada: el corte, antes de nada más ------------------------
+  if (cerrado) {
+    const dif = cerrado.session.difference_cents ?? 0
+    return (
+      <ScrollView contentContainerStyle={k.centro}>
+        <View style={k.tarjeta}>
+          <Text style={s.label}>Caja cerrada</Text>
+          <Text style={[s.headlineLg, k.titulo]}>Corte del día</Text>
+
+          <Linea
+            etiqueta={`${cerrado.sales_count} ${cerrado.sales_count === 1 ? 'venta' : 'ventas'}`}
+            valor={cerrado.sales_total_cents}
+          />
+          {Object.entries(cerrado.by_method).map(([metodo, dato]) => (
+            <Linea
+              key={metodo}
+              etiqueta={`  ${NOMBRE_MEDIO[metodo] ?? metodo} (${dato.count})`}
+              valor={dato.amount_cents}
+            />
+          ))}
+          <View style={s.rule} />
+          <Linea etiqueta="Efectivo esperado" valor={cerrado.expected_cash_cents} />
+          <Linea etiqueta="Efectivo contado" valor={cerrado.session.counted_cash_cents ?? 0} />
+
+          <View style={[k.diferencia, dif !== 0 && k.diferenciaMarcada]}>
+            <Text style={s.label}>{dif === 0 ? 'Cuadra' : dif > 0 ? 'Sobró' : 'Faltó'}</Text>
+            <Text style={s.priceDisplay}>{formatPrice(Math.abs(dif), true)}</Text>
+          </View>
+
+          {aviso ? <Text style={[s.bodyMuted, k.aviso]}>{aviso}</Text> : null}
+
+          <View style={k.espacio} />
+          {hayImpresora() ? (
+            <>
+              <Button
+                label={imprimiendo === 'cierre' ? 'Imprimiendo…' : 'Imprimir corte'}
+                variant="outline"
+                size="lg"
+                fullWidth
+                loading={imprimiendo === 'cierre'}
+                onPress={() => void imprimir('cierre', cerrado.session.id, false)}
+              />
+              <View style={k.espacioCorto} />
+            </>
+          ) : null}
+          <Button
+            label="Listo"
+            size="lg"
+            fullWidth
+            onPress={() => {
+              setCerrado(null)
+              setAviso(null)
+            }}
+          />
+        </View>
+      </ScrollView>
     )
   }
 
@@ -144,6 +261,39 @@ export default function Caja() {
             }
           />
         </View>
+
+        {/* Reimprimir un corte: para el sobre que se perdió o la revisión de
+            fin de mes. Solo tiene sentido con impresora. */}
+        {hayImpresora() && anteriores.length > 0 ? (
+          <View style={[k.tarjeta, k.anteriores]}>
+            <Text style={s.label}>Cortes anteriores</Text>
+            {aviso ? <Text style={[s.bodyMuted, k.aviso]}>{aviso}</Text> : null}
+            {anteriores.map((c) => (
+              <View key={c.id} style={k.linea}>
+                <View style={s.fill}>
+                  <Text style={s.body}>{FECHA_CORTE.format(new Date(c.closed_at))}</Text>
+                  <Text style={s.bodyMuted}>
+                    {[
+                      c.closed_by_name,
+                      c.difference_cents
+                        ? `${c.difference_cents < 0 ? 'Faltó' : 'Sobró'} ${formatPrice(Math.abs(c.difference_cents), true)}`
+                        : 'Cuadró',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </View>
+                <Button
+                  label="Reimprimir"
+                  variant="subtle"
+                  loading={imprimiendo === c.id}
+                  disabled={imprimiendo !== null}
+                  onPress={() => void imprimir(c.id, c.id, true)}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
       </ScrollView>
     )
   }
@@ -184,6 +334,23 @@ export default function Caja() {
               valor={dato.amount_cents}
             />
           ))}
+
+          {/* Una foto del turno a media jornada. El papel dice en grande que
+              no cierra la caja. */}
+          {hayImpresora() ? (
+            <>
+              <View style={k.espacio} />
+              {aviso ? <Text style={[s.bodyMuted, k.aviso]}>{aviso}</Text> : null}
+              <Button
+                label="Imprimir corte parcial"
+                variant="outline"
+                fullWidth
+                loading={imprimiendo === 'parcial'}
+                disabled={imprimiendo !== null}
+                onPress={() => void imprimir('parcial', null, false)}
+              />
+            </>
+          ) : null}
         </View>
 
         {can('register.movement') ? (
@@ -339,6 +506,9 @@ const k = StyleSheet.create({
   titulo: { marginTop: 4, marginBottom: space.gap },
   nota: { fontSize: 13, marginBottom: space.gap },
   espacio: { height: space.gutter },
+  espacioCorto: { height: space.gap },
+  anteriores: { marginTop: space.gutter },
+  aviso: { marginTop: space.gap },
   dos: { flexDirection: 'row', gap: space.gap },
   linea: {
     flexDirection: 'row',

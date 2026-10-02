@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { formatPrice } from '@lumane/core'
 import { errorMessage } from '@lumane/db'
@@ -7,6 +7,8 @@ import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
 import { color, s, space } from '@/theme'
+import { cargarImpresora, hayImpresora, preferencias } from '@/features/printer/impresora'
+import { imprimirVenta } from '@/features/printer/tickets'
 import { destinosDisponibles, type DestinoTicket } from './destinos.ts'
 
 /**
@@ -23,6 +25,10 @@ import { destinosDisponibles, type DestinoTicket } from './destinos.ts'
  * quien quiso gastarlo.
  *
  * «Listo» cierra sin más. Es el camino de siempre y por eso es el botón grande.
+ *
+ * Con impresora configurada y «imprimir al cobrar» encendido, el ticket sale
+ * solo al abrirse la hoja. Si falla —sin papel, apagada— la venta ya está
+ * cobrada igual: se avisa y se ofrece reintentar, nada más.
  */
 
 export function SaleDoneSheet({
@@ -30,6 +36,7 @@ export function SaleDoneSheet({
   orderNumber,
   changeCents,
   correoSugerido,
+  reimpresion = false,
   onClose,
 }: {
   orderId: string
@@ -37,14 +44,35 @@ export function SaleDoneSheet({
   changeCents: number
   /** El de la clienta asociada, si la venta llevaba una. */
   correoSugerido?: string | null
+  /** Abierta desde el historial: no hay cambio que enseñar ni impresión automática. */
+  reimpresion?: boolean
   onClose: () => void
 }) {
   const destinos = destinosDisponibles()
   const [destino, setDestino] = useState<DestinoTicket | null>(null)
   const [dato, setDato] = useState(correoSugerido ?? '')
   const [enviando, setEnviando] = useState(false)
-  const [enviado, setEnviado] = useState<string | null>(null)
+  const [enviado, setEnviado] = useState<{ titulo: string; detalle: string | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [auto, setAuto] = useState<'imprimiendo' | 'impreso' | 'fallo' | null>(null)
+  const autoLanzado = useRef(false)
+
+  useEffect(() => {
+    if (reimpresion || autoLanzado.current) return
+    autoLanzado.current = true
+    void (async () => {
+      await cargarImpresora()
+      if (!hayImpresora() || !preferencias().autoImprimir) return
+      setAuto('imprimiendo')
+      try {
+        await imprimirVenta(orderId, { reimpresion: false })
+        setAuto('impreso')
+      } catch (e) {
+        setAuto('fallo')
+        setError(errorMessage(e as { message?: string }))
+      }
+    })()
+  }, [orderId, reimpresion])
 
   async function mandar(d: DestinoTicket) {
     if (d.pide && dato.trim() === '') {
@@ -54,8 +82,9 @@ export function SaleDoneSheet({
     setEnviando(true)
     setError(null)
     try {
-      await d.enviar(orderId, dato)
-      setEnviado(dato.trim() || 'la clienta')
+      await d.enviar(orderId, dato, { reimpresion })
+      setEnviado(d.hecho(dato))
+      if (d.key === 'impresora') setAuto(null)
       setDestino(null)
       setDato('')
     } catch (e) {
@@ -68,26 +97,28 @@ export function SaleDoneSheet({
   return (
     <Sheet
       eyebrow={`Venta ${orderNumber}`}
-      title={changeCents > 0 ? formatPrice(changeCents, true) : 'Cobrada'}
+      title={reimpresion ? 'Ticket' : changeCents > 0 ? formatPrice(changeCents, true) : 'Cobrada'}
       titleIsMoney={changeCents > 0}
       onClose={onClose}
       closeLabel="Listo"
       action={{ label: 'Listo', onPress: onClose }}
       error={error}
     >
-      {changeCents > 0 ? (
+      {reimpresion ? (
+        <Text style={s.bodyMuted}>Lo impreso desde aquí sale marcado como reimpresión.</Text>
+      ) : changeCents > 0 ? (
         <Text style={s.bodyLg}>Cambio para la clienta.</Text>
       ) : (
         <Text style={s.bodyMuted}>Pago exacto, sin cambio.</Text>
       )}
 
+      {auto === 'imprimiendo' ? <Text style={s.bodyMuted}>Imprimiendo ticket…</Text> : null}
+      {auto === 'impreso' && !enviado ? <Text style={s.bodyMuted}>Ticket impreso.</Text> : null}
+
       {enviado ? (
         <View style={d.aviso}>
-          <Text style={s.body}>{`Ticket mandado a ${enviado}.`}</Text>
-          <Text style={s.bodyMuted}>
-            Puede tardar hasta un minuto en llegar. Si la clienta no lo ve, que revise el correo no
-            deseado.
-          </Text>
+          <Text style={s.body}>{enviado.titulo}</Text>
+          {enviado.detalle ? <Text style={s.bodyMuted}>{enviado.detalle}</Text> : null}
         </View>
       ) : destino ? (
         <View style={d.bloque}>
@@ -125,7 +156,8 @@ export function SaleDoneSheet({
           {destinos.map((x) => (
             <Button
               key={x.key}
-              label={x.label}
+              label={etiqueta(x, auto)}
+              disabled={x.key === 'impresora' && auto === 'imprimiendo'}
               variant="outline"
               size="lg"
               fullWidth
@@ -142,6 +174,14 @@ export function SaleDoneSheet({
       )}
     </Sheet>
   )
+}
+
+/** Tras la impresión automática, «Imprimir» pasa a ser reintentar u otra copia. */
+function etiqueta(x: DestinoTicket, auto: 'imprimiendo' | 'impreso' | 'fallo' | null): string {
+  if (x.key !== 'impresora') return x.label
+  if (auto === 'fallo') return 'Reintentar impresión'
+  if (auto === 'impreso') return 'Imprimir otra copia'
+  return x.label
 }
 
 const d = StyleSheet.create({

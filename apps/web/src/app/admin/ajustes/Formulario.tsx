@@ -32,6 +32,7 @@ export interface AjustesIniciales {
   newsletterBody: string
   newsletterDisclaimer: string
   copyrightText: string
+  ticketThanks: string
   instagram: string
   facebook: string
   tiktok: string
@@ -122,6 +123,17 @@ export function FormularioAjustes({ inicial }: { inicial: AjustesIniciales }) {
         </FormRow>
         <FormRow label="TikTok" htmlFor="tiktok">
           <TextInput id="tiktok" name="tiktok" inputMode="url" defaultValue={inicial.tiktok} />
+        </FormRow>
+      </section>
+
+      <section>
+        <h2 className="font-label-upper text-label-upper text-secondary">Ticket de caja</h2>
+        <FormRow
+          label="Mensaje del ticket"
+          htmlFor="ticketThanks"
+          hint="Va al pie del ticket impreso en la boutique. Una o dos frases cortas: el rollo es de 58 mm. Si lo dejas vacío, el ticket no lleva pie."
+        >
+          <TextInput id="ticketThanks" name="ticketThanks" maxLength={120} defaultValue={inicial.ticketThanks} />
         </FormRow>
       </section>
 

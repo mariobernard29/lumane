@@ -2650,6 +2650,7 @@ export type Database = {
           store_name: string
           tagline: string | null
           tax_rate: number
+          ticket_thanks: string | null
           updated_at: string
           whatsapp_number: string | null
         }
@@ -2670,6 +2671,7 @@ export type Database = {
           store_name?: string
           tagline?: string | null
           tax_rate?: number
+          ticket_thanks?: string | null
           updated_at?: string
           whatsapp_number?: string | null
         }
@@ -2690,6 +2692,7 @@ export type Database = {
           store_name?: string
           tagline?: string | null
           tax_rate?: number
+          ticket_thanks?: string | null
           updated_at?: string
           whatsapp_number?: string | null
         }
@@ -2906,6 +2909,7 @@ export type Database = {
         Returns: Json
       }
       get_cart: { Args: { p_token?: string }; Returns: Json }
+      get_corte: { Args: { p_session_id?: string }; Returns: Json }
       get_customer_profile: { Args: { p_customer_id: string }; Returns: Json }
       get_my_orders: { Args: { p_limit?: number }; Returns: Json }
       get_my_staff_profile: { Args: never; Returns: Json }
@@ -2920,6 +2924,7 @@ export type Database = {
       get_pos_sale: { Args: { p_order_id: string }; Returns: Json }
       get_register_summary: { Args: { p_session_id?: string }; Returns: Json }
       get_staff_order: { Args: { p_order_id: string }; Returns: Json }
+      get_ticket_header: { Args: never; Returns: Json }
       list_inventory: {
         Args: {
           p_limit?: number
@@ -2929,6 +2934,7 @@ export type Database = {
         }
         Returns: Json
       }
+      list_register_sessions: { Args: { p_limit?: number }; Returns: Json }
       list_staff_orders: {
         Args: {
           p_before?: string

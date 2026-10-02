@@ -11,11 +11,13 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "db:types": "node scripts/generar-tipos.mjs",
-    "imagenes:prototipo": "node --experimental-strip-types scripts/subir-prototipo.ts"
+    "imagenes:prototipo": "node --experimental-strip-types scripts/subir-prototipo.ts",
+    "logo:ticket": "node scripts/logo-ticket.mjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.112.4",
     "prettier": "^3.6.2",
+    "sharp": "0.35.4",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3"
   }

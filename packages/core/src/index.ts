@@ -41,11 +41,29 @@ export {
   type PaymentSummary,
 } from './payments.ts'
 
-export { EscPosBuilder, wrapText, type Align, type PaperWidth } from './escpos.ts'
+export {
+  EscPosBuilder,
+  wrapText,
+  type Align,
+  type Corte,
+  type Font,
+  type PaperWidth,
+  type RasterImage,
+} from './escpos.ts'
+
+export { formatFechaHora, type TicketHeader } from './cabecera.ts'
 
 export {
   buildSaleTicket,
+  NOMBRE_MEDIO,
   type TicketData,
   type TicketLine,
+  type TicketOptions,
   type TicketPayment,
 } from './ticket.ts'
+
+export { buildCorteTicket, type CorteData, type CorteMethod } from './corte.ts'
+
+export { buildTestTicket, leerTicket, ticketComoTexto, type LineaLeída } from './prueba.ts'
+
+export { LOGO_TICKET } from './logo-ticket.ts'

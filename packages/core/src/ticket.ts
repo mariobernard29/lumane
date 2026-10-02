@@ -5,8 +5,13 @@
  * pantalla en memoria: lo impreso tiene que ser lo GUARDADO. Si la base ajustó
  * un precio o un cupón cambió el total, el papel dice lo que de verdad se
  * cobró.
+ *
+ * Diseñado para 58 mm (32 columnas): el cuerpo en fuente A, que se lee a la
+ * distancia del mostrador; la letra pequeña en fuente B; el total en doble
+ * alto, que destaca sin perder columnas.
  */
-import { EscPosBuilder, type PaperWidth } from './escpos.ts'
+import { formatFechaHora, imprimirBandaReimpresion, imprimirCabecera, type TicketHeader } from './cabecera.ts'
+import { EscPosBuilder, type Corte, type PaperWidth } from './escpos.ts'
 import { formatAmount } from './money.ts'
 
 export interface TicketLine {
@@ -28,13 +33,10 @@ export interface TicketPayment {
 }
 
 export interface TicketData {
-  storeName: string
-  locationName: string
-  addressLines: string[]
-  phone: string | null
+  header: TicketHeader
   orderNumber: string
   placedAt: Date
-  cashierName: string
+  cashierName: string | null
   customerName: string | null
   lines: TicketLine[]
   subtotalCents: number
@@ -44,27 +46,24 @@ export interface TicketData {
   taxRate: number
   payments: TicketPayment[]
   changeCents: number
-  /** Pie legal y de cambios. Viene de `store_settings`, no del código. */
+  /** Agradecimiento y demás pie. Viene de `store_settings`, no del código. */
   footerLines: string[]
+  /** Si es una copia, cuándo se sacó. `null` en el original. */
+  reprintedAt: Date | null
 }
 
-const NOMBRE_MEDIO: Record<string, string> = {
+export interface TicketOptions {
+  width?: PaperWidth
+  corte?: Corte
+}
+
+export const NOMBRE_MEDIO: Record<string, string> = {
   cash: 'Efectivo',
   card: 'Tarjeta',
   transfer: 'Transferencia',
   store_credit: 'Saldo a favor',
-  stripe: 'Tarjeta (en linea)',
+  stripe: 'Tarjeta (en línea)',
 }
-
-const FECHA = new Intl.DateTimeFormat('es-MX', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-  timeZone: 'America/Mazatlan',
-})
 
 /**
  * Los bytes del ticket, listos para mandar a la impresora.
@@ -73,21 +72,22 @@ const FECHA = new Intl.DateTimeFormat('es-MX', {
  * plantilla sirve para imprimir, para previsualizar en pantalla y para
  * comprobarse en una prueba sin impresora conectada.
  */
-export function buildSaleTicket(data: TicketData, width: PaperWidth = 32): Uint8Array {
-  const t = new EscPosBuilder(width)
+export function buildSaleTicket(data: TicketData, options: TicketOptions = {}): Uint8Array {
+  const t = new EscPosBuilder(options.width ?? 32, { corte: options.corte })
+  const width = t.width
 
-  t.init().align('center').bold(true).size(2).line(data.storeName).size(1)
+  t.init()
+  imprimirCabecera(t, data.header)
+  t.rule('=')
 
-  t.bold(false).line(data.locationName)
-  for (const línea of data.addressLines) t.wrap(línea)
-  if (data.phone) t.line(`Tel ${data.phone}`)
+  if (data.reprintedAt) {
+    imprimirBandaReimpresion(t, data.reprintedAt)
+    t.rule('=')
+  }
 
-  t.feed(1).rule()
-
-  t.align('left')
   t.columns('TICKET', data.orderNumber)
-  t.columns('FECHA', FECHA.format(data.placedAt))
-  t.columns('ATENDIO', truncate(data.cashierName, width - 9))
+  t.columns('FECHA', formatFechaHora(data.placedAt))
+  if (data.cashierName) t.columns('ATENDIÓ', truncate(data.cashierName, width - 9))
   if (data.customerName) t.columns('CLIENTA', truncate(data.customerName, width - 9))
 
   t.rule()
@@ -114,12 +114,12 @@ export function buildSaleTicket(data: TicketData, width: PaperWidth = 32): Uint8
     t.columns('Descuentos', `-${formatAmount(data.discountCents)}`)
   }
 
-  // El total en doble tamaño: es lo que la clienta busca con la vista.
-  t.bold(true).size(2).columns('TOTAL', formatAmount(data.totalCents), width / 2).size(1).bold(false)
+  // El total en doble alto: es lo que la clienta busca con la vista.
+  t.bold(true).size('alto').columns('TOTAL', `$${formatAmount(data.totalCents)}`).size(1).bold(false)
 
   // El IVA se informa como parte del total, nunca sumado: es lo que exige la
   // ley y lo que hace el motor de precios.
-  t.line(`IVA ${(data.taxRate * 100).toFixed(0)}% incluido: ${formatAmount(data.taxCents)}`)
+  t.font('B').line(`IVA ${(data.taxRate * 100).toFixed(0)}% incluido: ${formatAmount(data.taxCents)}`).font('A')
 
   t.rule()
 
@@ -135,8 +135,11 @@ export function buildSaleTicket(data: TicketData, width: PaperWidth = 32): Uint8
     t.bold(true).columns('CAMBIO', formatAmount(data.changeCents)).bold(false)
   }
 
-  t.feed(1).align('center')
-  for (const línea of data.footerLines) t.wrap(línea)
+  if (data.footerLines.length > 0) {
+    t.feed(1).align('center')
+    for (const línea of data.footerLines) t.wrap(línea)
+    t.align('left')
+  }
 
   return t.cut().build()
 }
@@ -145,6 +148,6 @@ function nombreDeLínea(línea: TicketLine): string {
   return línea.variantTitle ? `${línea.productName} - ${línea.variantTitle}` : línea.productName
 }
 
-function truncate(value: string, max: number): string {
+export function truncate(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, Math.max(0, max - 1))}.`
 }

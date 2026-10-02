@@ -41,6 +41,7 @@ const ajustesSchema = z.object({
   newsletterBody: z.string().nullable(),
   newsletterDisclaimer: z.string().nullable(),
   copyrightText: z.string().nullable(),
+  ticketThanks: z.string().max(120, 'El mensaje del ticket es demasiado largo para el rollo').nullable(),
   instagram: z.string().nullable(),
   facebook: z.string().nullable(),
   tiktok: z.string().nullable(),
@@ -59,6 +60,7 @@ export async function guardarAjustes(formData: FormData): Promise<ResultadoAdmin
     newsletterBody: texto(formData.get('newsletterBody')),
     newsletterDisclaimer: texto(formData.get('newsletterDisclaimer')),
     copyrightText: texto(formData.get('copyrightText')),
+    ticketThanks: texto(formData.get('ticketThanks')),
     instagram: texto(formData.get('instagram')),
     facebook: texto(formData.get('facebook')),
     tiktok: texto(formData.get('tiktok')),
@@ -93,6 +95,7 @@ export async function guardarAjustes(formData: FormData): Promise<ResultadoAdmin
       newsletter_body: d.newsletterBody,
       newsletter_disclaimer: d.newsletterDisclaimer,
       copyright_text: d.copyrightText,
+      ticket_thanks: d.ticketThanks,
       social_links: social,
     })
     // `store_settings` es un singleton: su clave primaria es un boolean que

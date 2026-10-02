@@ -1,7 +1,7 @@
 .expo/
 dist/
-android/
-ios/
+/android/
+/ios/
 *.apk
 *.aab
 .env.local

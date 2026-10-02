@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Redirect, Slot, usePathname, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { OrdersProvider, useOrders } from '@/features/orders/OrdersContext'
+import { cargarImpresora, useImpresora } from '@/features/printer/impresora'
 import { useSession } from '@/lib/session'
 import { color, s, size, space, text } from '@/theme'
 
@@ -20,12 +22,22 @@ import { color, s, size, space, text } from '@/theme'
  */
 
 interface Modulo {
-  href: '/venta' | '/caja' | '/pedidos' | '/historial' | '/inventario' | '/clientes' | '/reportes'
+  href:
+    | '/venta'
+    | '/caja'
+    | '/pedidos'
+    | '/historial'
+    | '/inventario'
+    | '/clientes'
+    | '/reportes'
+    | '/impresora'
   label: string
   /** Sin este permiso el módulo no se pinta: no se ofrecen callejones sin salida. */
   permission: string
   /** Pinta el número de pedidos que esperan. Solo Pedidos lo lleva. */
   contador?: true
+  /** Pinta un aviso si la última impresión falló. Solo Impresora lo lleva. */
+  alerta?: true
 }
 
 const MODULOS: Modulo[] = [
@@ -38,6 +50,8 @@ const MODULOS: Modulo[] = [
   // Va al final y con 'reports.read': la cajera no lo verá siquiera, que es lo
   // que decidió la migración 0058 al colgar el reporte de ese permiso.
   { href: '/reportes', label: 'Reportes', permission: 'reports.read' },
+  // Quien cobra es quien imprime: cuelga del mismo permiso que la venta.
+  { href: '/impresora', label: 'Impresora', permission: 'sales.create', alerta: true },
 ]
 
 /**
@@ -68,8 +82,13 @@ export default function AppLayout() {
 function Marco() {
   const { staff, can, signOut } = useSession()
   const { pendientes } = useOrders()
+  const impresora = useImpresora()
   const router = useRouter()
   const pathname = usePathname()
+
+  useEffect(() => {
+    void cargarImpresora()
+  }, [])
 
   // `AppLayout` ya garantizó que hay sesión; esto solo estrecha el tipo.
   if (!staff) return null
@@ -118,6 +137,11 @@ function Marco() {
                 {modulo.contador && pendientes > 0 ? (
                   <View style={l.globo}>
                     <Text style={l.globoTexto}>{pendientes}</Text>
+                  </View>
+                ) : null}
+                {modulo.alerta && impresora.estado === 'error' ? (
+                  <View style={l.globo} accessibilityLabel="La última impresión falló">
+                    <Text style={l.globoTexto}>!</Text>
                   </View>
                 ) : null}
               </Pressable>

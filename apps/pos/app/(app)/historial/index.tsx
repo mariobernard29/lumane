@@ -127,6 +127,7 @@ export default function Historial() {
           orderId={ticket.id}
           orderNumber={ticket.order_number}
           changeCents={0}
+          reimpresion
           onClose={() => setTicket(null)}
         />
       ) : null}
