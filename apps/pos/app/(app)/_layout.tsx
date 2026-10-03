@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Redirect, Slot, usePathname, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { OrdersProvider, useOrders } from '@/features/orders/OrdersContext'
 import { cargarImpresora, useImpresora } from '@/features/printer/impresora'
 import { useSession } from '@/lib/session'
-import { color, s, size, space, text } from '@/theme'
+import { color, compacto, s, size, space, text } from '@/theme'
 
 /**
  * El marco del POS.
@@ -116,7 +116,9 @@ function Marco() {
           </Text>
         </View>
 
-        <View style={l.modulos}>
+        {/* Con desplazamiento: en una tablet de 8" los nueve módulos no caben
+            en alto, y un módulo cortado es un módulo que no existe. */}
+        <ScrollView style={l.modulos} contentContainerStyle={l.modulosLista}>
           {visibles.map((modulo) => {
             // Coincidencia exacta o con barra detrás. Con `startsWith` a secas,
             // dos rutas que comparten prefijo se iluminarían a la vez.
@@ -150,7 +152,7 @@ function Marco() {
               </Pressable>
             )
           })}
-        </View>
+        </ScrollView>
 
         {/* Quién está cobrando, siempre visible. En un mostrador con turnos,
             saber a nombre de quién se está registrando cada venta importa más
@@ -161,9 +163,13 @@ function Marco() {
           accessibilityLabel="Cerrar sesión"
           style={({ pressed }) => [l.cajera, pressed && l.moduloPulsado]}
         >
-          <Text style={[s.label, l.cajeraRol]} numberOfLines={1}>
-            {staff.role.name}
-          </Text>
+          {/* En compacto el rol se omite: el nombre basta para saber quién
+              cobra, y ese renglón es un módulo más a la vista. */}
+          {compacto ? null : (
+            <Text style={[s.label, l.cajeraRol]} numberOfLines={1}>
+              {staff.role.name}
+            </Text>
+          )}
           <Text style={[s.body, s.onDark]} numberOfLines={1}>
             {staff.full_name}
           </Text>
@@ -180,17 +186,20 @@ function Marco() {
 
 const l = StyleSheet.create({
   marco: { flex: 1, flexDirection: 'row', backgroundColor: color.surface },
+  // En compacto el carril cede 36 dp al contenido: en 1000 dp de ancho, la
+  // pantalla de venta los necesita más que la etiqueta de un módulo.
   carril: {
-    width: 168,
+    width: compacto ? 132 : 168,
     backgroundColor: color['editorial-ink'],
     paddingVertical: space.gutter,
   },
   marca: { paddingHorizontal: space.gutter, paddingBottom: space.sectionSm },
   // 136 px útiles en el carril (168 menos los dos gutter). 120 deja aire a los
   // lados; la altura sale de la proporción 2.75:1 del arte.
-  logotipo: { width: 120, height: 44, marginBottom: 2 },
+  logotipo: compacto ? { width: 96, height: 35, marginBottom: 2 } : { width: 120, height: 44, marginBottom: 2 },
   marcaPie: { color: color['on-primary-container'], marginTop: 2 },
-  modulos: { flex: 1, gap: 2 },
+  modulos: { flex: 1 },
+  modulosLista: { gap: 2 },
   modulo: {
     minHeight: size.touchMin,
     flexDirection: 'row',
@@ -223,6 +232,7 @@ const l = StyleSheet.create({
     borderTopColor: color['on-primary-fixed-variant'],
     paddingHorizontal: space.gutter,
     paddingTop: space.gap,
+    marginTop: space.gap,
     gap: 2,
   },
   cajeraRol: { color: color['on-primary-container'] },

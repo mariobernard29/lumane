@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 import { Button } from '@/ui/Button'
-import { color, elevation, s, size, space } from '@/theme'
+import { color, compacto, elevation, s, size, space } from '@/theme'
 
 /**
  * La hoja que sube desde abajo.
@@ -24,7 +24,9 @@ import { color, elevation, s, size, space } from '@/theme'
  *
  * 3. **`maxHeight: 88%`.** Deja ver que hay algo detrás: una hoja a pantalla
  *    completa se confunde con una pantalla nueva, y entonces el botón atrás de
- *    Android se vuelve impredecible.
+ *    Android se vuelve impredecible. En una tablet compacta sube a 94%: con
+ *    600 dp de alto, el 12% que se deja ver son 70 dp que la hoja de cobro
+ *    necesita más que la vista de lo de atrás.
  */
 
 interface SheetProps {
@@ -120,7 +122,7 @@ const h = StyleSheet.create({
   // ser translúcido y ningún token lo es.
   fondo: { flex: 1, backgroundColor: 'rgba(10,10,10,0.45)' },
   hoja: {
-    maxHeight: '88%',
+    maxHeight: compacto ? '94%' : '88%',
     backgroundColor: color['paper-bright'],
     borderTopWidth: size.border,
     borderTopColor: color.primary,

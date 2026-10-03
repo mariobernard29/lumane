@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 
-import { color, s, size, text } from '@/theme'
+import { color, s, size, space, text } from '@/theme'
 
 /**
  * Los botones del mostrador.
@@ -105,9 +105,9 @@ const base = StyleSheet.create({
     borderRadius: size.radius,
     borderWidth: size.hairline,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: space.edge,
   },
-  contenido: { justifyContent: 'center', gap: 12 },
+  contenido: { justifyContent: 'center', gap: space.gap },
   texto: { ...text.labelUpper, textAlign: 'center' },
   trailing: { marginLeft: 'auto' },
   // Sin gris nuevo: se baja la opacidad del propio botón. Añadir un color de

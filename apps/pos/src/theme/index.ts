@@ -17,13 +17,67 @@
  * Regla: ninguna pantalla escribe un color ni un tamaño de fuente a mano. Si
  * algo no se puede expresar con estos estilos, falta un estilo aquí.
  */
-import { StyleSheet } from 'react-native'
-import { nativeColors, nativeSizes, nativeSpacing, nativeText } from '@lumane/tokens/native'
+import { Dimensions, StyleSheet } from 'react-native'
+import {
+  nativeColors,
+  nativeSizes,
+  nativeSpacing,
+  nativeText,
+  type NativeTextStyle,
+} from '@lumane/tokens/native'
+
+/**
+ * Tablet compacta.
+ *
+ * Los tokens están medidos para la tablet de caja (Galaxy Tab A9+, unos
+ * 1280 × 800 dp en horizontal). En una de 8.7" (Tab A7 Lite, unos 1000 × 600)
+ * los mismos márgenes de 24, botones de 72 y títulos de 46 se comen la mitad
+ * de la pantalla y la venta no cabe.
+ *
+ * Se decide UNA vez al arrancar, por el lado corto de la ventana: el POS va
+ * fijo en horizontal y la tablet no cambia de tamaño mientras se usa. Así los
+ * estilos siguen siendo `StyleSheet.create` estáticos en todas las pantallas,
+ * sin un hook en cada una. En la tablet grande no cambia nada.
+ */
+const ventana = Dimensions.get('window')
+export const compacto = Math.min(ventana.width, ventana.height) < 700
+
+/** Sustituye tamaño e interlineado de un estilo de texto. */
+function t(base: NativeTextStyle, fontSize: number, lineHeight: number): NativeTextStyle {
+  return { ...base, fontSize, lineHeight }
+}
+
+const textoCompacto: Record<keyof typeof nativeText, NativeTextStyle> = {
+  ...nativeText,
+  // Lo grande es lo que más se reduce: un título de 46 en 600 dp de alto
+  // ocupa lo que tres renglones de carrito.
+  displayXl: t(nativeText.displayXl, 36, 36),
+  headlineLg: t(nativeText.headlineLg, 26, 30),
+  headlineMd: t(nativeText.headlineMd, 22, 27),
+  headlineSm: t(nativeText.headlineSm, 18, 24),
+  bodyLg: t(nativeText.bodyLg, 17, 25),
+  bodyMd: t(nativeText.bodyMd, 15, 22),
+  navLink: t(nativeText.navLink, 12, 12),
+  price: t(nativeText.price, 14, 14),
+  priceDisplay: t(nativeText.priceDisplay, 32, 36),
+  // Las etiquetas de 11 ya están en el mínimo legible: no se tocan.
+}
 
 export const color = nativeColors
-export const space = nativeSpacing
-export const size = nativeSizes
-export const text = nativeText
+
+export const space: Record<keyof typeof nativeSpacing, number> = compacto
+  ? { edge: 16, gutter: 12, gap: 8, sectionSm: 16, sectionMd: 28 }
+  : nativeSpacing
+
+/**
+ * Las alturas táctiles bajan menos que el resto: 48 sigue por encima del
+ * mínimo de Android (48 dp) y el botón de cobrar sigue siendo el más grande.
+ */
+export const size: Record<keyof typeof nativeSizes, number> = compacto
+  ? { ...nativeSizes, touchMin: 48, action: 54, charge: 60 }
+  : nativeSizes
+
+export const text: Record<keyof typeof nativeText, NativeTextStyle> = compacto ? textoCompacto : nativeText
 
 /**
  * Estilos compuestos que se repiten en todas las pantallas.

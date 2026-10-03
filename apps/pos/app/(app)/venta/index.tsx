@@ -19,7 +19,14 @@ import { SaleDoneSheet } from '@/features/receipt/SaleDoneSheet'
 import { useSession, useStaff } from '@/lib/session'
 import { supabaseUrl } from '@/lib/supabase'
 import { Button } from '@/ui/Button'
-import { color, s, size, space, text } from '@/theme'
+import { color, compacto, s, size, space, text } from '@/theme'
+
+/**
+ * Ancho mínimo de una tarjeta de la rejilla. Las columnas salen de cuántas
+ * caben, no de un número fijo: tres en la tablet de caja, las que quepan en
+ * una más chica sin que el nombre de la prenda se parta en cuatro renglones.
+ */
+const TARJETA_MIN = 160
 
 /**
  * La pantalla de venta. Es la que está abierta el 90 % del día.
@@ -42,6 +49,7 @@ export default function Venta() {
   const { results, loading, error, buscarYa } = useVariantSearch(query)
   const carrito = useSaleCart()
   const [cobrando, setCobrando] = useState(false)
+  const [columnas, setColumnas] = useState(3)
   /** La venta recién registrada, mientras su hoja de cierre está abierta. */
   const [cobrada, setCobrada] = useState<{
     orderNumber: string
@@ -82,7 +90,14 @@ export default function Venta() {
   return (
     <View style={v.pantalla}>
       {/* ---------------- Catálogo ---------------- */}
-      <View style={v.catalogo}>
+      <View
+        style={v.catalogo}
+        onLayout={(e) => {
+          const util = e.nativeEvent.layout.width - space.gutter * 2
+          const caben = Math.floor((util + space.gap) / (TARJETA_MIN + space.gap))
+          setColumnas(Math.max(2, Math.min(4, caben)))
+        }}
+      >
         <View style={v.buscador}>
           <TextInput
             ref={campo}
@@ -110,9 +125,12 @@ export default function Venta() {
         ) : null}
 
         <FlatList
+          // FlatList no admite cambiar `numColumns` en caliente: la clave
+          // nueva lo vuelve a montar con las columnas que caben.
+          key={`columnas-${columnas}`}
           data={results}
           keyExtractor={(item) => item.variant_id}
-          numColumns={3}
+          numColumns={columnas}
           columnWrapperStyle={v.fila}
           contentContainerStyle={v.rejilla}
           keyboardShouldPersistTaps="always"
@@ -292,6 +310,44 @@ function LineaCarrito({
 }) {
   const excede = linea.quantity > linea.available
 
+  const pasos = (
+    <View style={v.pasos}>
+      <Pressable onPress={onMenos} style={v.paso} accessibilityLabel="Quitar una">
+        <Text style={v.pasoTexto}>−</Text>
+      </Pressable>
+      <Text style={v.cantidad}>{linea.quantity}</Text>
+      <Pressable onPress={onMas} style={v.paso} accessibilityLabel="Añadir una">
+        <Text style={v.pasoTexto}>+</Text>
+      </Pressable>
+    </View>
+  )
+
+  // En compacto el carril del carrito mide 320: en una sola fila, nombre,
+  // botones e importe dejarían 80 dp para el nombre. En dos renglones el
+  // nombre usa todo el ancho y los controles van debajo.
+  if (compacto) {
+    return (
+      <View style={v.lineaCompacta}>
+        <View style={v.lineaArriba}>
+          <Text style={[s.body, s.fill]} numberOfLines={2}>
+            {linea.productName}
+          </Text>
+          <Text style={s.price}>{formatPrice(lineTotalCents(linea), true)}</Text>
+        </View>
+        <Text style={s.label}>
+          {linea.variantTitle || 'Única'} · {formatPrice(linea.unitPriceCents)}
+        </Text>
+        {excede ? <Text style={v.excede}>Solo hay {linea.available} en sistema</Text> : null}
+        <View style={v.lineaAbajo}>
+          {pasos}
+          <Pressable onPress={onQuitar} accessibilityLabel="Quitar del carrito" style={v.quitarToque}>
+            <Text style={v.quitar}>Quitar</Text>
+          </Pressable>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View style={v.linea}>
       <View style={s.fill}>
@@ -306,15 +362,7 @@ function LineaCarrito({
         ) : null}
       </View>
 
-      <View style={v.pasos}>
-        <Pressable onPress={onMenos} style={v.paso} accessibilityLabel="Quitar una">
-          <Text style={v.pasoTexto}>−</Text>
-        </Pressable>
-        <Text style={v.cantidad}>{linea.quantity}</Text>
-        <Pressable onPress={onMas} style={v.paso} accessibilityLabel="Añadir una">
-          <Text style={v.pasoTexto}>+</Text>
-        </Pressable>
-      </View>
+      {pasos}
 
       <View style={v.importe}>
         <Text style={s.price}>{formatPrice(lineTotalCents(linea), true)}</Text>
@@ -351,7 +399,7 @@ const v = StyleSheet.create({
 
   tarjeta: {
     flex: 1,
-    minHeight: 132,
+    minHeight: compacto ? 112 : 132,
     backgroundColor: color['paper-bright'],
     borderWidth: 1,
     borderColor: color['surface-variant'],
@@ -360,7 +408,7 @@ const v = StyleSheet.create({
     overflow: 'hidden',
   },
   foto: {
-    height: 96,
+    height: compacto ? 72 : 96,
     backgroundColor: color['vellum-neutral'],
     alignItems: 'center',
     justifyContent: 'center',
@@ -374,8 +422,11 @@ const v = StyleSheet.create({
   agotada: { textDecorationLine: 'line-through', color: color.outline },
   sku: { ...text.labelUpper, fontSize: 10, letterSpacing: 1, color: color['text-muted'] },
 
+  // En compacto, ancho fijo: con `flex: 2` el carrito se quedaba en 330 dp y la
+  // rejilla en 500; fijo en 320 el reparto es el mismo pero no depende del
+  // ancho del carril.
   carrito: {
-    flex: 2,
+    ...(compacto ? { width: 320 } : { flex: 2 }),
     backgroundColor: color['paper-bright'],
     borderLeftWidth: 1,
     borderLeftColor: color.primary,
@@ -397,6 +448,15 @@ const v = StyleSheet.create({
     borderBottomColor: color['surface-variant'],
   },
   excede: { ...text.labelUpper, color: color.primary, marginTop: 4 },
+  lineaCompacta: {
+    gap: 4,
+    paddingVertical: space.gap,
+    borderBottomWidth: 1,
+    borderBottomColor: color['surface-variant'],
+  },
+  lineaArriba: { flexDirection: 'row', alignItems: 'flex-start', gap: space.gap },
+  lineaAbajo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
+  quitarToque: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.gap },
 
   pasos: { flexDirection: 'row', alignItems: 'center' },
   paso: {

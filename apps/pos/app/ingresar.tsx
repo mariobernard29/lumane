@@ -17,7 +17,7 @@ import { useSession } from '@/lib/session'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
-import { color, s, size, space, text } from '@/theme'
+import { color, compacto, s, size, space, text } from '@/theme'
 
 /**
  * Acceso del personal.
@@ -313,12 +313,14 @@ const a = StyleSheet.create({
     backgroundColor: color['paper-bright'],
     borderWidth: 1,
     borderColor: color.primary,
-    padding: 32,
+    padding: compacto ? space.sectionSm : 32,
   },
   // El logotipo es 4398x1597 — proporción 2.75:1. La altura se fija y el ancho
   // se deja al `resizeMode`, para que no se deforme si mañana cambia el arte.
-  logotipo: { width: 200, height: 73, marginBottom: 10 },
-  marca: { marginBottom: 32 },
+  logotipo: compacto
+    ? { width: 150, height: 55, marginBottom: 6 }
+    : { width: 200, height: 73, marginBottom: 10 },
+  marca: { marginBottom: compacto ? space.sectionSm : 32 },
   espacio: { height: space.gutter },
   aviso: { gap: 4 },
   // La altura aproximada del formulario, para que la tarjeta no encoja y
