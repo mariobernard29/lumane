@@ -95,5 +95,13 @@ export function useVariantSearch(query: string) {
     [],
   )
 
-  return { results, loading, error, buscarYa }
+  /**
+   * Vuelve a pedir la lista que se está viendo. Las existencias de cada
+   * tarjeta son una foto del momento de la búsqueda: tras una venta, una
+   * devolución o una entrada de mercancía, sin esto la pantalla seguiría
+   * diciendo que quedan dos de lo que se acaba de vender.
+   */
+  const recargar = useCallback((texto: string) => buscar(texto), [buscar])
+
+  return { results, loading, error, buscarYa, recargar }
 }

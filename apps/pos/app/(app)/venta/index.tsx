@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { useFocusEffect } from 'expo-router'
 import {
   ActivityIndicator,
   FlatList,
@@ -46,7 +47,7 @@ export default function Venta() {
   const { refresh } = useSession()
 
   const [query, setQuery] = useState('')
-  const { results, loading, error, buscarYa } = useVariantSearch(query)
+  const { results, loading, error, buscarYa, recargar } = useVariantSearch(query)
   const carrito = useSaleCart()
   const [cobrando, setCobrando] = useState(false)
   const [columnas, setColumnas] = useState(3)
@@ -60,6 +61,22 @@ export default function Venta() {
   const campo = useRef<TextInput>(null)
 
   const hayTurno = staff.open_session !== null
+
+  // Al volver a Venta desde otro módulo (una entrada en Inventario, una
+  // devolución en Historial) las existencias pueden haber cambiado.
+  const consulta = useRef(query)
+  consulta.current = query
+  const primeraVez = useRef(true)
+  useFocusEffect(
+    useCallback(() => {
+      // Al montar ya busca el efecto del propio hook; esto es para las vueltas.
+      if (primeraVez.current) {
+        primeraVez.current = false
+        return
+      }
+      void recargar(consulta.current)
+    }, [recargar]),
+  )
 
   const añadir = useCallback(
     (hit: VariantHit) => {
@@ -224,6 +241,10 @@ export default function Venta() {
             // invitaría a cobrarla otra vez. `reset()` estrena client_uuid.
             carrito.reset()
             setQuery('')
+            // Las tarjetas muestran las existencias de ANTES de vender. Si el
+            // buscador ya estaba vacío, `setQuery` no cambia nada y la lista
+            // no se volvería a pedir: se pide aquí, ya con lo vendido descontado.
+            void recargar('')
             // El turno cambia de saldo con cada venta en efectivo; releerlo
             // mantiene sincronizado lo que el módulo de caja va a mostrar.
             void refresh()

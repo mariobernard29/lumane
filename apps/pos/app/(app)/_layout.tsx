@@ -111,9 +111,6 @@ function Marco() {
             accessibilityRole="image"
             accessibilityLabel="LUMANE"
           />
-          <Text style={[s.label, l.marcaPie]} numberOfLines={1}>
-            {staff.location.code}
-          </Text>
         </View>
 
         {/* Con desplazamiento: en una tablet de 8" los nueve módulos no caben
@@ -197,7 +194,6 @@ const l = StyleSheet.create({
   // 136 px útiles en el carril (168 menos los dos gutter). 120 deja aire a los
   // lados; la altura sale de la proporción 2.75:1 del arte.
   logotipo: compacto ? { width: 96, height: 35, marginBottom: 2 } : { width: 120, height: 44, marginBottom: 2 },
-  marcaPie: { color: color['on-primary-container'], marginTop: 2 },
   modulos: { flex: 1 },
   modulosLista: { gap: 2 },
   modulo: {
