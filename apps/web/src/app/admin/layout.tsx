@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   title: 'Administración · LUMANE',
   // Un panel no tiene nada que hacer en un buscador.
   robots: { index: false, follow: false },
+  // Icono propio para distinguir la pestaña del panel de la de la tienda, y
+  // para el acceso directo en la pantalla de inicio de la tablet.
+  icons: { icon: '/icon-admin.png', apple: '/apple-icon-admin.png' },
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

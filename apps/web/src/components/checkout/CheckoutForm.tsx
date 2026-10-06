@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { Button, Icon, cn, formatPrice } from '@lumane/ui-web'
 
 import {
@@ -672,13 +673,13 @@ export function CheckoutForm({
 
         <p className="font-body-md text-[13px] text-text-muted mt-4">
           Al confirmar aceptas nuestros{' '}
-          <a href="/p/terminos" className="underline underline-offset-4">
+          <Link href="/p/terminos" className="underline underline-offset-4">
             términos
-          </a>{' '}
+          </Link>{' '}
           y el{' '}
-          <a href="/p/privacidad" className="underline underline-offset-4">
+          <Link href="/p/privacidad" className="underline underline-offset-4">
             aviso de privacidad
-          </a>
+          </Link>
           .
         </p>
       </form>
