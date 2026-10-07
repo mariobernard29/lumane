@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { supabase } from '@/lib/supabase'
-import type { OrderStatus } from './estados.ts'
+import type { OrderStatus, TipoEntrega } from './estados.ts'
 
 /**
  * La lista de pedidos: la bandeja de la web y el historial del mostrador.
@@ -22,6 +22,8 @@ export interface OrderRow {
   line_count: number
   recipient: string | null
   tracking_number: string | null
+  /** Desde la 0073. Antes de aplicarla llega `undefined` y se lee como paquetería. */
+  shipping_kind?: TipoEntrega | null
   customer: {
     id: string
     first_name: string | null

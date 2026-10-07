@@ -22,6 +22,12 @@ const STATUS: Record<
   cancelled: { label: 'Cancelado', icon: 'close', variant: 'data' },
 }
 
+/** Cuando se recoge en boutique, «enviado» quiere decir que ya espera en el mostrador. */
+const STATUS_RECOGER: typeof STATUS = {
+  shipped: { label: 'Listo para recoger', icon: 'storefront', variant: 'solid' },
+  delivered: { label: 'Recogido', icon: 'check_circle', variant: 'outline' },
+}
+
 export function OrdersList({ orders }: { orders: AccountOrder[] }) {
   if (orders.length === 0) {
     return (
@@ -41,7 +47,8 @@ export function OrdersList({ orders }: { orders: AccountOrder[] }) {
   return (
     <ul className="flex flex-col divide-y divide-surface-variant">
       {orders.map((order) => {
-        const status = STATUS[order.status] ?? {
+        const status = (order.shippingKind === 'pickup' ? STATUS_RECOGER[order.status] : undefined) ??
+          STATUS[order.status] ?? {
           label: order.status,
           icon: 'inventory_2',
           variant: 'data' as const,

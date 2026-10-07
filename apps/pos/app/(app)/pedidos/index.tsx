@@ -150,7 +150,7 @@ function Fila({ row, onPress }: { row: OrderRow; onPress: () => void }) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Pedido ${row.order_number} de ${quien}, ${etiqueta(row.status)}`}
+      accessibilityLabel={`Pedido ${row.order_number} de ${quien}, ${etiqueta(row.status, row.shipping_kind)}`}
       style={({ pressed }) => [p.fila, pressed && p.filaPulsada]}
     >
       <View style={p.filaIzq}>
@@ -166,7 +166,7 @@ function Fila({ row, onPress }: { row: OrderRow; onPress: () => void }) {
 
       <View style={p.filaDer}>
         <Text style={s.price}>{formatPrice(row.total_cents, true)}</Text>
-        <Text style={p.estado}>{etiqueta(row.status)}</Text>
+        <Text style={p.estado}>{etiqueta(row.status, row.shipping_kind)}</Text>
       </View>
     </Pressable>
   )

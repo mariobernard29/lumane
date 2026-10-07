@@ -23,6 +23,8 @@ export interface AccountOrder {
   items: number
   imageUrl: string
   guestToken: string | null
+  /** `flat`, `local_delivery` o `pickup`. Desde la 0073. */
+  shippingKind: string | null
 }
 
 export interface AccountAddress {
@@ -104,6 +106,7 @@ export const getAccountOrders = cache(async (): Promise<AccountOrder[]> => {
     items: number
     image_path: string | null
     guest_token: string | null
+    shipping_kind?: string | null
   }[]
 
   return raw.map((o) => ({
@@ -115,6 +118,7 @@ export const getAccountOrders = cache(async (): Promise<AccountOrder[]> => {
     items: o.items,
     imageUrl: storageUrl(o.image_path),
     guestToken: o.guest_token,
+    shippingKind: o.shipping_kind ?? null,
   }))
 })
 

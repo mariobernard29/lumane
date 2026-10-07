@@ -9,7 +9,16 @@ import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
 import { color, s, space, text } from '@/theme'
-import { ACCIONES, ESTADOS, etiqueta, type OrderStatus } from './estados.ts'
+import {
+  ESTADOS,
+  accion,
+  etiqueta,
+  sinGuia,
+  siguientePaso,
+  tipoEntrega,
+  type OrderStatus,
+  type TipoEntrega,
+} from './estados.ts'
 
 /**
  * La ficha de un pedido en línea, desde el mostrador.
@@ -129,19 +138,30 @@ export function OrderSheet({
     [orderId, cargar, onCambio],
   )
 
-  const enviar = useCallback(async () => {
-    if (guia.trim() === '') {
+  /**
+   * `directo`: entrega local o recoger en boutique, así que no hay guía. Pasa por el
+   * mismo RPC para que quede la fila del envío con su hora de salida, y el
+   * correo de «va en camino» ya sabe callarse el bloque de rastreo sin guía.
+   */
+  const enviar = useCallback(async (directo: TipoEntrega | null = null) => {
+    if (!directo && guia.trim() === '') {
       setError('Escribe el número de guía antes de marcarlo enviado')
       return
     }
     setOcupado(true)
     setError(null)
     const { error: fallo } = await supabase.rpc('pos_ship_order', {
-      p_payload: {
-        order_id: orderId,
-        carrier: transportista.trim() || null,
-        tracking_number: guia.trim(),
-      },
+      p_payload: directo
+        ? {
+            order_id: orderId,
+            carrier: directo === 'pickup' ? 'Recoger en boutique' : 'Entrega local',
+            tracking_number: null,
+          }
+        : {
+            order_id: orderId,
+            carrier: transportista.trim() || null,
+            tracking_number: guia.trim(),
+          },
     })
     setOcupado(false)
     if (fallo) {
@@ -183,6 +203,8 @@ export function OrderSheet({
 
   const { order } = ficha
   const estado = ESTADOS[order.status]
+  const tipo = tipoEntrega(order.shipping_method_snapshot)
+  const siguiente = siguientePaso(order.status, tipo)
   const puedeCumplir = can('orders.fulfill')
   const señas = direccion(order.shipping_address)
 
@@ -198,13 +220,13 @@ export function OrderSheet({
   return (
     <Sheet
       eyebrow={`Pedido ${order.order_number}`}
-      title={etiqueta(order.status)}
+      title={etiqueta(order.status, tipo)}
       onClose={onClose}
       closeLabel={pidiendo ? 'Cancelar' : 'Volver'}
       action={accionPie}
       error={error}
     >
-      {estado.siguiente ? <Text style={s.bodyMuted}>{estado.siguiente}</Text> : null}
+      {siguiente ? <Text style={s.bodyMuted}>{siguiente}</Text> : null}
 
       {/* ---- Qué juntar ---- */}
       <View style={o.bloque}>
@@ -230,7 +252,7 @@ export function OrderSheet({
       </View>
 
       {/* ---- A dónde va ---- */}
-      {señas.length > 0 ? (
+      {señas.length > 0 || order.shipping_method_snapshot?.name ? (
         <View style={o.bloque}>
           <Text style={s.label}>Entrega</Text>
           {order.shipping_method_snapshot?.name ? (
@@ -293,12 +315,18 @@ export function OrderSheet({
           {estado.avances.map((destino) => (
             <Button
               key={destino}
-              label={ACCIONES[destino] ?? etiqueta(destino)}
+              label={accion(destino, tipo)}
               variant={destino === 'cancelled' ? 'outline' : 'solid'}
               size="lg"
               fullWidth
               disabled={ocupado}
+              loading={ocupado && sinGuia(tipo) && destino === 'shipped'}
               onPress={() => {
+                // Entrega local y recoger en boutique no llevan guía: va directo.
+                if (destino === 'shipped' && sinGuia(tipo)) {
+                  void enviar(tipo)
+                  return
+                }
                 // Enviar y cancelar piden un dato antes; el resto es directo.
                 if (destino === 'shipped' || destino === 'cancelled') {
                   setError(null)
@@ -323,7 +351,7 @@ export function OrderSheet({
               hour: '2-digit',
               minute: '2-digit',
               timeZone: 'America/Mazatlan',
-            }).format(new Date(e.created_at))} · ${etiqueta(e.to_status as OrderStatus)}`}
+            }).format(new Date(e.created_at))} · ${etiqueta(e.to_status as OrderStatus, tipo)}`}
           </Text>
         ))}
       </View>

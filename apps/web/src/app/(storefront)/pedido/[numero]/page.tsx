@@ -25,7 +25,7 @@ interface OrderView {
   total_cents: number
   placed_at: string | null
   shipping_address: Record<string, string | null> | null
-  shipping_method_snapshot: { name?: string; description?: string } | null
+  shipping_method_snapshot: { name?: string; description?: string; kind?: string } | null
 }
 
 interface OrderLineView {
@@ -45,6 +45,12 @@ const STATUS_LABELS: Record<string, string> = {
   delivered: 'Entregado',
   completed: 'Completado',
   cancelled: 'Cancelado',
+}
+
+/** Cuando se recoge en boutique, «enviado» quiere decir que ya espera en el mostrador. */
+const STATUS_LABELS_RECOGER: Record<string, string> = {
+  shipped: 'Listo para recoger',
+  delivered: 'Recogido',
 }
 
 /**
@@ -103,7 +109,11 @@ export default async function OrderPage({ params, searchParams }: PageProps) {
       <section className="px-5 sm:px-margin-edge pt-8 pb-section-v-md md:pb-section-v-lg">
         <div className="border border-primary p-8 md:p-12 mb-10">
           <p className="font-label-upper text-label-upper uppercase text-accent-red mb-4">
-            {STATUS_LABELS[order.status] ?? order.status}
+            {(order.shipping_method_snapshot?.kind === 'pickup'
+              ? STATUS_LABELS_RECOGER[order.status]
+              : undefined) ??
+              STATUS_LABELS[order.status] ??
+              order.status}
           </p>
           <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4">
             Gracias por tu compra

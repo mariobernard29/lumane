@@ -319,6 +319,10 @@ function bloqueEntrega(c: Carga): string {
   </td></tr>`
 }
 
+function esRecoger(c: Carga): boolean {
+  return (c.order.shipping_method as Record<string, unknown> | null)?.kind === 'pickup'
+}
+
 function armar(titulo: string, entradilla: string, c: Carga, extra = ''): Correo {
   const contenido = `
     ${cabecera(titulo, entradilla)}
@@ -476,6 +480,17 @@ export function plantillaPara(topic: string, aEstado: string | null, c: Carga): 
     }
 
     case 'shipped': {
+      // Recoger en boutique: `shipped` es «ya está en el mostrador», no «va en
+      // camino». El horario sale en el pie, junto a los datos de contacto.
+      if (esRecoger(c)) {
+        const correo = armar(
+          'Tu pedido está listo para recoger',
+          `${saludo}. Tu pedido ya te espera en la boutique. Pasa por él cuando quieras dentro de nuestro horario; solo menciona tu número de pedido.`,
+          c,
+        )
+        correo.asunto = `Tu pedido ${c.order.number} está listo para recoger · LUMANE`
+        return correo
+      }
       const s = c.shipment
       const extra = s?.tracking_number
         ? `
@@ -498,7 +513,7 @@ export function plantillaPara(topic: string, aEstado: string | null, c: Carga): 
 
     case 'delivered': {
       const correo = armar(
-        'Tu pedido fue entregado',
+        esRecoger(c) ? 'Gracias por pasar por tu pedido' : 'Tu pedido fue entregado',
         `${saludo}. Esperamos que te encante. Si algo no quedó como esperabas, escríbenos y lo resolvemos.`,
         c,
       )
