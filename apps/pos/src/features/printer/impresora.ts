@@ -131,6 +131,57 @@ export async function dispositivosEmparejados(): Promise<DispositivoBt[]> {
   return [...lista].sort((a, b) => Number(b.esImpresora) - Number(a.esImpresora))
 }
 
+/**
+ * Los permisos para BUSCAR, que son más que los de imprimir: desde Android 12,
+ * BLUETOOTH_SCAN; hasta el 11, el sistema lo trata como ubicación.
+ */
+async function pedirPermisosBusqueda(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true
+  const P = PermissionsAndroid.PERMISSIONS
+  const lista =
+    Platform.Version >= 31 ? [P.BLUETOOTH_SCAN!, P.BLUETOOTH_CONNECT!] : [P.ACCESS_FINE_LOCATION!]
+  const r = await PermissionsAndroid.requestMultiple(lista)
+  return lista.every((p) => r[p] === PermissionsAndroid.RESULTS.GRANTED)
+}
+
+/**
+ * Buscar y emparejar llegaron después que imprimir: una tablet con el build
+ * anterior tiene el módulo pero no estas dos funciones, y una actualización
+ * por OTA le puede traer esta pantalla igualmente.
+ */
+export function puedeBuscar(): boolean {
+  return typeof ImpresoraBt?.buscar === 'function' && typeof ImpresoraBt?.emparejar === 'function'
+}
+
+export async function buscarCercanas(): Promise<DispositivoBt[]> {
+  if (!ImpresoraBt || !puedeBuscar()) throw new Error('Actualiza la app para buscar impresoras desde aquí')
+  if (!(await pedirPermisosBusqueda())) {
+    throw new Error(
+      Number(Platform.Version) >= 31
+        ? 'Sin permiso de dispositivos cercanos no se pueden buscar impresoras'
+        : 'Sin permiso de ubicación Android no deja buscar impresoras',
+    )
+  }
+  if (!ImpresoraBt.bluetoothEncendido()) throw new Error('Enciende el Bluetooth de la tablet')
+  const lista = await ImpresoraBt.buscar(15)
+  return [...lista].sort((a, b) => Number(b.esImpresora) - Number(a.esImpresora))
+}
+
+/** Los PIN de fábrica de casi todas las térmicas de 58 mm, en orden de frecuencia. */
+const PINES_COMUNES = ['0000', '1234', '1111', '123456', '000000']
+
+/**
+ * Empareja la impresora poniendo el PIN la app. Si la cajera escribió uno
+ * (el de la hoja de prueba), se prueba primero ese.
+ */
+export async function emparejar(mac: string, pin?: string): Promise<DispositivoBt> {
+  if (!ImpresoraBt || !puedeBuscar()) throw new Error('Actualiza la app para emparejar desde aquí')
+  if (!(await pedirPermisos())) throw new Error('Sin permiso de Bluetooth no se puede emparejar')
+  const propio = pin?.trim()
+  const pines = propio ? [propio, ...PINES_COMUNES.filter((p) => p !== propio)] : PINES_COMUNES
+  return ImpresoraBt.emparejar(mac, pines)
+}
+
 let cola: Promise<unknown> = Promise.resolve()
 
 /**

@@ -4,13 +4,17 @@ import { errorMessage } from '@lumane/db'
 
 import type { DispositivoBt } from '../../../modules/impresora-bt'
 import {
+  buscarCercanas,
   cargarImpresora,
   dispositivosEmparejados,
+  emparejar,
   guardarPreferencias,
+  puedeBuscar,
   useImpresora,
 } from '@/features/printer/impresora'
 import { imprimirPrueba, olvidarCabecera } from '@/features/printer/tickets'
 import { Button } from '@/ui/Button'
+import { Field } from '@/ui/Field'
 import { color, s, size, space } from '@/theme'
 
 /**
@@ -27,6 +31,42 @@ export default function Impresora() {
   const [buscando, setBuscando] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+
+  // Buscar y emparejar desde aquí: para cuando el PIN falla en los ajustes de Android.
+  const [cercanas, setCercanas] = useState<DispositivoBt[] | null>(null)
+  const [explorando, setExplorando] = useState(false)
+  const [emparejando, setEmparejando] = useState<string | null>(null)
+  const [pin, setPin] = useState('')
+  const [falloCerca, setFalloCerca] = useState<string | null>(null)
+
+  async function explorar() {
+    setExplorando(true)
+    setFalloCerca(null)
+    try {
+      setCercanas(await buscarCercanas())
+    } catch (e) {
+      setFalloCerca(errorMessage(e as { message?: string }))
+    } finally {
+      setExplorando(false)
+    }
+  }
+
+  async function emparejarCon(d: DispositivoBt) {
+    setEmparejando(d.mac)
+    setFalloCerca(null)
+    setAviso(null)
+    try {
+      const listo = await emparejar(d.mac, pin)
+      await guardarPreferencias({ mac: listo.mac, nombre: listo.nombre })
+      setCercanas((l) => l?.filter((x) => x.mac !== d.mac) ?? null)
+      setAviso('Emparejada y elegida. Imprime la página de prueba para comprobarla.')
+      void buscar()
+    } catch (e) {
+      setFalloCerca(errorMessage(e as { message?: string }))
+    } finally {
+      setEmparejando(null)
+    }
+  }
 
   const buscar = useCallback(async () => {
     setBuscando(true)
@@ -181,6 +221,63 @@ export default function Impresora() {
             </View>
           </View>
         </View>
+
+        {puedeBuscar() ? (
+          <View style={k.tarjeta}>
+            <Text style={s.label}>Emparejar desde aquí</Text>
+            <Text style={[s.bodyMuted, k.nota]}>
+              Si en los ajustes de Android el PIN no funcionó, búscala aquí: la app pone el PIN sola
+              (prueba 0000, 1234 y otros de fábrica). Si la impresora usa otro, escríbelo; sale en su
+              hoja de prueba, que se imprime manteniendo el botón de papel al encenderla.
+            </Text>
+
+            <Field
+              label="PIN (opcional)"
+              value={pin}
+              onChangeText={setPin}
+              keyboardType="number-pad"
+              maxLength={16}
+              editable={!emparejando}
+            />
+
+            {falloCerca ? <Text style={[s.body, k.fallo]}>{falloCerca}</Text> : null}
+
+            {cercanas?.length === 0 ? (
+              <Text style={[s.bodyMuted, k.fallo]}>
+                No apareció nada. Revisa que la impresora esté encendida, cerca, y que no esté conectada a
+                otro teléfono.
+              </Text>
+            ) : null}
+
+            {cercanas?.map((d) => (
+              <Pressable
+                key={d.mac}
+                accessibilityRole="button"
+                disabled={emparejando !== null}
+                onPress={() => void emparejarCon(d)}
+                style={({ pressed }) => [k.fila, pressed && k.filaPulsada]}
+              >
+                <View style={s.fill}>
+                  <Text style={s.body}>{d.nombre}</Text>
+                  <Text style={s.bodyMuted}>{d.mac}</Text>
+                </View>
+                <Text style={s.label}>
+                  {emparejando === d.mac ? 'Emparejando…' : d.esImpresora ? 'Impresora · Emparejar' : 'Emparejar'}
+                </Text>
+              </Pressable>
+            ))}
+
+            <View style={k.espacio} />
+            <Button
+              label={explorando ? 'Buscando… (unos 15 s)' : 'Buscar impresoras cercanas'}
+              variant="outline"
+              fullWidth
+              loading={explorando}
+              disabled={explorando || emparejando !== null}
+              onPress={() => void explorar()}
+            />
+          </View>
+        ) : null}
       </View>
     </ScrollView>
   )

@@ -1,6 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Android 11 y anteriores: los permisos clásicos. Desde Android 12 los
-         sustituye BLUETOOTH_CONNECT, que ya declara app.json. -->
+         sustituyen BLUETOOTH_CONNECT y BLUETOOTH_SCAN, que ya declara app.json. -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <!-- Buscar impresoras cercanas: hasta Android 11 el sistema lo trata como
+         ubicación. Desde el 12 basta BLUETOOTH_SCAN, y se declara que la
+         búsqueda no se usa para ubicar a nadie. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
 </manifest>

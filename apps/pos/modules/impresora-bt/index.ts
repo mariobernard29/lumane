@@ -17,6 +17,10 @@ export interface DispositivoBt {
 interface ImpresoraBtNativo {
   bluetoothEncendido(): boolean
   emparejados(): Promise<DispositivoBt[]>
+  /** Aparatos cercanos sin emparejar. Tarda lo que dure la búsqueda (~12 s). */
+  buscar(segundos: number): Promise<DispositivoBt[]>
+  /** Empareja probando los PIN en orden. Resuelve con el aparato ya emparejado. */
+  emparejar(mac: string, pines: string[]): Promise<DispositivoBt>
   conectar(mac: string): Promise<void>
   escribir(mac: string, base64: string): Promise<void>
   desconectar(): Promise<void>
