@@ -9,3 +9,5 @@ dist/
 .expo/
 supabase/.temp/
 supabase/.branches/
+
+respaldos/
