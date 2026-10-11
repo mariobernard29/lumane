@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lumane POS",
     "slug": "lumane-pos",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "default",
     "scheme": "lumanepos",
     "userInterfaceStyle": "light",
