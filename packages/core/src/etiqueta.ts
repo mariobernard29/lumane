@@ -236,7 +236,7 @@ function apaisada(t: TsplBuilder, d: DatosEtiqueta, m: Medidas): void {
     const opciones = [d.detalle, talla, talla.slice(0, columnas)]
     for (const texto of opciones) {
       const f = fuenteQueCabe(texto, libre, altoPrecio, { max: '3', min: '1' })
-      if (!f || texto.length < 2) continue
+      if (!f || texto.trim() === '') continue
       const md = medirTexto(texto, f.fuente, f.escala)
       t.texto(margen, y + Math.max(0, altoPrecio - md.alto), texto, f.fuente, f.escala)
       break

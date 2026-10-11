@@ -16,7 +16,7 @@ import { Field } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
 import { Teclado } from '@/ui/Teclado'
 import { CustomerPicker } from '@/features/customers/CustomerPicker'
-import { color, s, size, space, text } from '@/theme'
+import { color, s, size, space, text, useVertical } from '@/theme'
 
 /**
  * El cobro.
@@ -56,6 +56,7 @@ interface Props {
 }
 
 export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
+  const vertical = useVertical()
   const total = carrito.totals.totalCents
 
   const [pagos, setPagos] = useState<DraftPayment[]>([])
@@ -170,9 +171,9 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
         disabled: !(resumen.isSettled || cubre),
       }}
     >
-      <View style={c.columnas}>
+      <View style={[c.columnas, vertical && c.columnasVertical]}>
         {/* ---------------- Qué se cobra ---------------- */}
-        <View style={c.columna}>
+        <View style={[c.columna, vertical && c.columnaVertical]}>
           {/* La clienta es opcional. Asociarla sirve para el ticket por correo
               y su historial; el 90 % de las ventas no la lleva. */}
           <Pressable
@@ -262,7 +263,7 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
 
         {/* ---------------- Importe y teclado ---------------- */}
         {falta > 0 ? (
-          <View style={c.columna}>
+          <View style={[c.columna, vertical && c.columnaVertical]}>
             <View style={[c.pantalla, excedeSinCambio && c.pantallaError]}>
               <Text style={s.label}>
                 {esEfectivo ? 'Recibido' : `Importe ${MEDIOS.find((m) => m.key === medio)?.en}`}
@@ -324,6 +325,9 @@ export function ChargeSheet({ carrito, onCancelar, onCobrada }: Props) {
 
 const c = StyleSheet.create({
   columnas: { flexDirection: 'row', gap: space.edge, alignItems: 'flex-start' },
+  // En vertical, el teclado va debajo de los pagos en vez de al lado.
+  columnasVertical: { flexDirection: 'column', alignItems: 'stretch' },
+  columnaVertical: { flex: 0, flexBasis: 'auto' },
   columna: { flex: 1, gap: space.gap },
   clienta: {
     flexDirection: 'row',

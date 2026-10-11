@@ -9,7 +9,7 @@ import { useSession, useStaff } from '@/lib/session'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
-import { color, s, size, space, text } from '@/theme'
+import { color, s, size, space, text, useVertical } from '@/theme'
 
 /**
  * Caja.
@@ -60,6 +60,7 @@ const FECHA_CORTE = new Intl.DateTimeFormat('es-MX', {
 })
 
 export default function Caja() {
+  const vertical = useVertical()
   const staff = useStaff()
   const { refresh, can } = useSession()
   // Solo para repintar cuando cambia la impresora elegida.
@@ -303,8 +304,8 @@ export default function Caja() {
   const diferencia = contadoCents == null ? null : contadoCents - resumen.expected_cash_cents
 
   return (
-    <ScrollView contentContainerStyle={k.cuerpo} keyboardShouldPersistTaps="handled">
-      <View style={k.columna}>
+    <ScrollView contentContainerStyle={[k.cuerpo, vertical && k.cuerpoVertical]} keyboardShouldPersistTaps="handled">
+      <View style={[k.columna, vertical && k.columnaVertical]}>
         <View style={k.tarjeta}>
           <Text style={s.label}>Turno abierto</Text>
           <Text style={[s.headlineMd, k.titulo]}>
@@ -423,7 +424,7 @@ export default function Caja() {
       </View>
 
       {can('register.close') ? (
-        <View style={k.columna}>
+        <View style={[k.columna, vertical && k.columnaVertical]}>
           <View style={k.tarjeta}>
             <Text style={s.label}>Cerrar el día</Text>
             <Text style={[s.headlineMd, k.titulo]}>Corte de caja</Text>
@@ -494,7 +495,10 @@ function Linea({
 const k = StyleSheet.create({
   centro: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: space.edge },
   cuerpo: { flexDirection: 'row', gap: space.gutter, padding: space.edge },
+  cuerpoVertical: { flexDirection: 'column' },
   columna: { flex: 1, gap: space.gutter },
+  // En columna, `flex: 1` dentro de un ScrollView mide cero: cada bloque toma su alto.
+  columnaVertical: { flex: 0, flexBasis: 'auto', alignSelf: 'stretch' },
   tarjeta: {
     width: '100%',
     maxWidth: 560,

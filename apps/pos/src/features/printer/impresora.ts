@@ -5,12 +5,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ImpresoraBt, type DispositivoBt } from '../../../modules/impresora-bt'
 
 /**
- * La impresora térmica de caja.
+ * Las impresoras de caja: la de tickets (ESC/POS, la Moon58W) y la
+ * etiquetadora de prendas (TSPL, la Hanna58). Son aparatos distintos que
+ * hablan lenguajes distintos, así que cada una tiene su MAC y sus ajustes.
  *
  * Aquí viven tres cosas que el resto del POS no tiene por qué conocer:
  *
- *  - **Qué impresora**: la MAC elegida en Ajustes, guardada en el aparato.
- *    Es configuración de ESTA tablet, no de la tienda; por eso no va a la base.
+ *  - **Qué impresoras**: las MAC elegidas en el módulo Impresora, guardadas en
+ *    el aparato. Es configuración de ESTA tablet, no de la tienda; por eso no
+ *    va a la base.
  *  - **La cola**: cada impresión espera a que termine la anterior. Un ticket
  *    automático y una reimpresión pulsada a la vez saldrían entrelazados.
  *  - **El estado**, para pintarlo sin preguntar al módulo nativo a cada rato.
@@ -19,7 +22,25 @@ import { ImpresoraBt, type DispositivoBt } from '../../../modules/impresora-bt'
  * venta cobrada no se deshace porque se acabó el papel.
  */
 
+/** La etiquetadora y la etiqueta que lleva cargada. */
+export interface PreferenciasEtiquetadora {
+  mac: string | null
+  nombre: string | null
+  /** Id de `FORMATOS_ETIQUETA`, o `'personalizada'`. */
+  formatoId: string
+  anchoMm: number
+  altoMm: number
+  separacionMm: number
+  /** 0–15. */
+  densidad: number
+  velocidad: number
+  girar: boolean
+  desplazarXmm: number
+  desplazarYmm: number
+}
+
 export interface PreferenciasImpresora {
+  /** La de tickets. */
   mac: string | null
   nombre: string | null
   /** Imprimir el ticket en cuanto se cobra. */
@@ -28,7 +49,11 @@ export interface PreferenciasImpresora {
   imprimirCorte: boolean
   /** Copias del ticket de venta (la del cliente y, si se quiere, la de la tienda). */
   copias: 1 | 2
+  etiquetadora: PreferenciasEtiquetadora
 }
+
+/** Qué impresora: la de tickets o la de etiquetas. */
+export type Rol = 'tickets' | 'etiquetas'
 
 export type EstadoImpresora = 'sin-modulo' | 'sin-configurar' | 'lista' | 'imprimiendo' | 'error'
 
@@ -40,12 +65,28 @@ interface Estado {
 
 const CLAVE = 'lumane.impresora.v1'
 
+/** 50 × 30 mm: la etiqueta colgante de ropa más común. */
+export const ETIQUETADORA_INICIAL: PreferenciasEtiquetadora = {
+  mac: null,
+  nombre: null,
+  formatoId: '50x30',
+  anchoMm: 50,
+  altoMm: 30,
+  separacionMm: 2,
+  densidad: 8,
+  velocidad: 3,
+  girar: false,
+  desplazarXmm: 0,
+  desplazarYmm: 0,
+}
+
 const PREFS_INICIALES: PreferenciasImpresora = {
   mac: null,
   nombre: null,
   autoImprimir: true,
   imprimirCorte: true,
   copias: 1,
+  etiquetadora: ETIQUETADORA_INICIAL,
 }
 
 let actual: Estado = {
@@ -73,7 +114,13 @@ export function cargarImpresora(): Promise<void> {
     try {
       const guardado = await AsyncStorage.getItem(CLAVE)
       if (guardado) {
-        const prefs = { ...PREFS_INICIALES, ...(JSON.parse(guardado) as Partial<PreferenciasImpresora>) }
+        const leidas = JSON.parse(guardado) as Partial<PreferenciasImpresora>
+        // Las guardadas antes de la etiquetadora no traen `etiquetadora`.
+        const prefs = {
+          ...PREFS_INICIALES,
+          ...leidas,
+          etiquetadora: { ...ETIQUETADORA_INICIAL, ...leidas.etiquetadora },
+        }
         fijar({ prefs, estado: estadoEnReposo(prefs) })
       }
     } catch {
@@ -89,6 +136,17 @@ export async function guardarPreferencias(cambio: Partial<PreferenciasImpresora>
   await AsyncStorage.setItem(CLAVE, JSON.stringify(prefs))
 }
 
+export async function guardarEtiquetadora(cambio: Partial<PreferenciasEtiquetadora>): Promise<void> {
+  await guardarPreferencias({ etiquetadora: { ...actual.prefs.etiquetadora, ...cambio } })
+}
+
+/** Elige el aparato para un rol. */
+export function elegir(rol: Rol, d: { mac: string; nombre: string }): Promise<void> {
+  return rol === 'tickets'
+    ? guardarPreferencias({ mac: d.mac, nombre: d.nombre })
+    : guardarEtiquetadora({ mac: d.mac, nombre: d.nombre })
+}
+
 export function preferencias(): PreferenciasImpresora {
   return actual.prefs
 }
@@ -96,6 +154,16 @@ export function preferencias(): PreferenciasImpresora {
 /** Hay módulo nativo e impresora elegida. No garantiza que esté encendida. */
 export function hayImpresora(): boolean {
   return Boolean(ImpresoraBt && actual.prefs.mac)
+}
+
+export function hayEtiquetadora(): boolean {
+  return Boolean(ImpresoraBt && actual.prefs.etiquetadora.mac)
+}
+
+/** Por qué transporte imprimió la última vez: `clasico`, `ble` o null. */
+export function transporteDe(mac: string | null): 'clasico' | 'ble' | null {
+  if (!mac || typeof ImpresoraBt?.transporte !== 'function') return null
+  return ImpresoraBt.transporte(mac)
 }
 
 export function useImpresora(): Estado {
@@ -116,7 +184,7 @@ export async function pedirPermisos(): Promise<boolean> {
   if (Platform.OS !== 'android' || Platform.Version < 31) return true
   const r = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT!, {
     title: 'Bluetooth',
-    message: 'Lumane usa el Bluetooth para imprimir los tickets en la impresora de caja.',
+    message: 'Lumane usa el Bluetooth para imprimir los tickets y las etiquetas de las prendas.',
     buttonPositive: 'Permitir',
   })
   return r === PermissionsAndroid.RESULTS.GRANTED
@@ -185,14 +253,24 @@ export async function emparejar(mac: string, pin?: string): Promise<DispositivoB
 let cola: Promise<unknown> = Promise.resolve()
 
 /**
- * Manda los bytes a la impresora elegida, `copias` veces, detrás de lo que ya
- * estuviera en cola. Rechaza con un mensaje legible para la cajera.
+ * Manda los bytes a la impresora del `rol`, `copias` veces, detrás de lo que
+ * ya estuviera en cola. Rechaza con un mensaje legible para la cajera.
+ *
+ * Una sola cola para las dos impresoras: el módulo nativo mantiene una
+ * conexión a la vez, y alternar entre ellas a mitad de un envío cortaría
+ * el anterior.
  */
-export function imprimir(bytes: Uint8Array, copias = 1): Promise<void> {
+export function imprimir(bytes: Uint8Array, copias = 1, rol: Rol = 'tickets'): Promise<void> {
   const trabajo = cola.then(async () => {
-    const mac = actual.prefs.mac
+    const mac = rol === 'tickets' ? actual.prefs.mac : actual.prefs.etiquetadora.mac
     if (!ImpresoraBt) throw new Error('Esta versión de la app no tiene el módulo de impresora')
-    if (!mac) throw new Error('Elige la impresora en el módulo Impresora')
+    if (!mac) {
+      throw new Error(
+        rol === 'tickets'
+          ? 'Elige la impresora de tickets en el módulo Impresora'
+          : 'Elige la etiquetadora en el módulo Impresora › Etiquetas',
+      )
+    }
 
     fijar({ estado: 'imprimiendo', error: null })
     try {

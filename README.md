@@ -32,9 +32,26 @@ pnpm --filter @lumane/web dev
 | `pnpm typecheck` | TypeScript en todo el monorepo |
 | `pnpm build` | Build de producción |
 | `pnpm db:types` | Regenera los tipos desde el esquema de Supabase |
+| `pnpm catalogo:plantilla` | Regenera `plantillas/Plantilla catálogo Lumane.xlsx` con las categorías actuales |
+| `pnpm catalogo:importar archivo.xlsx` | Revisa el Excel del catálogo; con `--de-verdad`, lo sube |
 
 > **Tras cada migración hay que correr `pnpm db:types`.** Si no, el editor
 > seguirá creyendo que una columna nueva no existe.
+
+## Cargar el catálogo desde Excel
+
+1. Llenar `plantillas/Plantilla catálogo Lumane.xlsx`: una fila por talla y
+   color; la hoja «Instrucciones» explica cada columna. Las fotos van en una
+   carpeta `fotos/` junto al Excel.
+2. `pnpm catalogo:importar "ruta/al/archivo.xlsx"` revisa el archivo entero y
+   dice fila por fila qué corregir. No sube nada.
+3. `pnpm catalogo:importar "ruta/al/archivo.xlsx" --de-verdad` lo sube.
+
+Reimportar es seguro: la prenda se reconoce por su código y la variante por su
+SKU, y las existencias se fijan (no se suman). Cada carga queda en el libro de
+inventario como «Carga del catálogo desde Excel», a nombre de la dueña. Usa la
+llave de servicio de `apps/web/.env.local` y la función `importar_prenda`
+(migración 0074), que llama a los mismos RPC que la caja.
 
 ## Reglas del proyecto
 

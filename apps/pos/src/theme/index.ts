@@ -17,7 +17,7 @@
  * Regla: ninguna pantalla escribe un color ni un tamaño de fuente a mano. Si
  * algo no se puede expresar con estos estilos, falta un estilo aquí.
  */
-import { Dimensions, StyleSheet } from 'react-native'
+import { Dimensions, StyleSheet, useWindowDimensions } from 'react-native'
 import {
   nativeColors,
   nativeSizes,
@@ -172,3 +172,19 @@ export const elevation = {
   shadowRadius: 12,
   elevation: 12,
 } as const
+
+/**
+ * La tablet en vertical.
+ *
+ * A diferencia de `compacto`, esto SÍ cambia mientras se usa: la tablet se
+ * gira sobre el mostrador. Por eso es un hook y no una constante, y por eso
+ * las pantallas no lo meten en `StyleSheet.create` sino que eligen entre dos
+ * estilos ya creados (`[k.fila, vertical && k.columna]`).
+ *
+ * El lado corto sigue decidiendo `compacto`, que no cambia al girar: una Tab
+ * A9+ en vertical mide 800 de ancho y conserva los tamaños grandes.
+ */
+export function useVertical(): boolean {
+  const { width, height } = useWindowDimensions()
+  return height > width
+}

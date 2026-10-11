@@ -77,6 +77,17 @@ for (const formato of FORMATOS_ETIQUETA) {
   })
 }
 
+test('una talla de una sola letra también sale', () => {
+  for (const formato of FORMATOS_ETIQUETA) {
+    const { bytes } = buildEtiquetas(
+      [{ nombre: 'Blusa Satinada Drapeada Negra', detalle: 'M', precioCents: 129000, sku: 'LM-BLUSAT-M', codigoBarras: null, copias: 1 }],
+      formato,
+    )
+    const textos = leerEtiqueta(bytes).etiquetas[0]!.elementos.flatMap((e) => (e.tipo === 'texto' ? [e.contenido] : []))
+    assert.ok(textos.includes('M'), `${formato.id}: falta la talla M`)
+  }
+})
+
 test('los acentos van en la página 850, igual que el ticket', () => {
   const { bytes } = buildEtiquetas(
     [{ nombre: 'Suéter Ñandú', detalle: 'Única', precioCents: 100, sku: 'X', codigoBarras: null, copias: 1 }],

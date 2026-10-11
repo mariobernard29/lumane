@@ -28,4 +28,15 @@ config.resolver.nodeModulesPaths = [
 // app, así que no hace falta un paso de build entre editar y ver el cambio.
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'ts', 'tsx']
 
+// Vista previa en el navegador (`expo start --web`): el almacén seguro de
+// Android no existe ahí, y se sustituye por uno sobre localStorage. Solo en
+// web: el APK sigue usando el Keystore.
+const resolverOriginal = config.resolver.resolveRequest
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === 'web' && moduleName === 'expo-secure-store') {
+    return { type: 'sourceFile', filePath: path.resolve(projectRoot, 'src/web/secure-store.ts') }
+  }
+  return (resolverOriginal ?? context.resolveRequest)(context, moduleName, platform)
+}
+
 module.exports = config

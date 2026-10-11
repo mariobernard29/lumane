@@ -10,11 +10,13 @@
     "export": "expo export --platform android",
     "typecheck": "tsc -p tsconfig.json",
     "build:preview": "eas build --profile preview --platform android",
-    "build:dev": "eas build --profile development --platform android"
+    "build:dev": "eas build --profile development --platform android",
+    "web": "expo start --web"
   },
   "dependencies": {
     "@expo-google-fonts/figtree": "^0.4.1",
     "@expo-google-fonts/instrument-serif": "^0.4.1",
+    "@expo/metro-runtime": "~57.0.16",
     "@lumane/core": "workspace:*",
     "@lumane/db": "workspace:*",
     "@lumane/tokens": "workspace:*",
@@ -38,10 +40,12 @@
     "expo-system-ui": "~57.0.4",
     "expo-updates": "~57.0.23",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.26.0"
+    "react-native-screens": "~4.26.0",
+    "react-native-web": "^0.21.4"
   },
   "devDependencies": {
     "@lumane/config": "workspace:*",

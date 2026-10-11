@@ -20,12 +20,13 @@ import {
   type EstadoProducto,
   type ProductoCompleto,
 } from '@/features/products/datos'
+import { agregarEtiquetas, etiquetasDePrenda } from '@/features/printer/etiquetas'
 import { FotosEditor } from '@/features/products/FotosEditor'
 import { OpcionesEditor } from '@/features/products/OpcionesEditor'
 import { Button } from '@/ui/Button'
 import { Chip } from '@/ui/Chip'
 import { Field } from '@/ui/Field'
-import { color, s, size, space, text } from '@/theme'
+import { color, s, size, space, text, useVertical } from '@/theme'
 
 /**
  * La ficha de una prenda: alta y edición.
@@ -57,6 +58,7 @@ const CUIDADOS = [
 ]
 
 export default function FichaProducto() {
+  const vertical = useVertical()
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const esNueva = id === 'nueva'
@@ -69,6 +71,25 @@ export default function FichaProducto() {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [etiquetando, setEtiquetando] = useState(false)
+
+  /**
+   * Manda a Etiquetas todas las tallas de la prenda, una etiqueta por pieza en
+   * existencia. Lee lo GUARDADO: si hay cambios sin guardar (un precio nuevo),
+   * la etiqueta saldría con el viejo; por eso conviene guardar antes.
+   */
+  async function etiquetar() {
+    setEtiquetando(true)
+    setError(null)
+    try {
+      agregarEtiquetas(await etiquetasDePrenda(id))
+      router.push('/etiquetas')
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setEtiquetando(false)
+    }
+  }
 
   useEffect(() => {
     void listarCategorias()
@@ -213,6 +234,9 @@ export default function FichaProducto() {
           {esNueva ? 'Nueva prenda' : p.name || 'Prenda'}
         </Text>
         {!esNueva ? <Button label="Eliminar" variant="subtle" onPress={confirmarBorrado} /> : null}
+        {!esNueva ? (
+          <Button label="Etiquetas" variant="outline" loading={etiquetando} onPress={() => void etiquetar()} />
+        ) : null}
         <Button label={esNueva ? 'Crear prenda' : 'Guardar'} loading={guardando} onPress={() => void guardar()} />
       </View>
 
@@ -222,9 +246,9 @@ export default function FichaProducto() {
         </View>
       ) : null}
 
-      <ScrollView contentContainerStyle={k.cuerpo} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[k.cuerpo, vertical && k.cuerpoVertical]} keyboardShouldPersistTaps="handled">
         {/* ---- Columna izquierda: qué es ---- */}
-        <View style={k.columna}>
+        <View style={[k.columna, vertical && k.columnaVertical]}>
           <Seccion titulo="La prenda">
             <Field label="Nombre" value={p.name} onChangeText={(name) => cambiar({ name })} placeholder="Camisa de lino" />
             <Field
@@ -330,7 +354,7 @@ export default function FichaProducto() {
         </View>
 
         {/* ---- Columna derecha: cómo se vende ---- */}
-        <View style={k.columna}>
+        <View style={[k.columna, vertical && k.columnaVertical]}>
           <Seccion titulo="Precio">
             <View style={k.dos}>
               <View style={s.fill}>
@@ -478,7 +502,10 @@ const k = StyleSheet.create({
   },
   mensajeError: { borderWidth: size.border, borderColor: color.primary },
   cuerpo: { flexDirection: 'row', alignItems: 'flex-start', gap: space.gutter, padding: space.edge },
+  cuerpoVertical: { flexDirection: 'column', alignItems: 'stretch' },
   columna: { flex: 1, gap: space.gutter },
+  // En columna, `flex: 1` dentro de un ScrollView mide cero: cada bloque toma su alto.
+  columnaVertical: { flex: 0, flexBasis: 'auto', alignSelf: 'stretch' },
   seccion: {
     backgroundColor: color['paper-bright'],
     borderWidth: 1,

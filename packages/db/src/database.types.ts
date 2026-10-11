@@ -1598,6 +1598,30 @@ export type Database = {
           },
         ]
       }
+      pos_release: {
+        Row: {
+          apk_url: string
+          id: boolean
+          notas: string | null
+          published_at: string
+          version: string
+        }
+        Insert: {
+          apk_url: string
+          id?: boolean
+          notas?: string | null
+          published_at?: string
+          version: string
+        }
+        Update: {
+          apk_url?: string
+          id?: boolean
+          notas?: string | null
+          published_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           category_id: string
@@ -3007,6 +3031,7 @@ export type Database = {
         }
         Returns: Json
       }
+      importar_prenda: { Args: { p_payload: Json }; Returns: Json }
       pos_save_product: { Args: { p_payload: Json }; Returns: Json }
       pos_create_sale: { Args: { p_payload: Json }; Returns: Json }
       pos_search_variants: {

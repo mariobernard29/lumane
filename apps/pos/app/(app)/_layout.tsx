@@ -6,15 +6,18 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { OrdersProvider, useOrders } from '@/features/orders/OrdersContext'
 import { cargarImpresora, useImpresora } from '@/features/printer/impresora'
 import { useSession } from '@/lib/session'
-import { color, compacto, s, size, space, text } from '@/theme'
+import { color, compacto, s, size, space, text, useVertical } from '@/theme'
 
 /**
  * El marco del POS.
  *
- * Carril lateral, no pestañas inferiores. La tablet se usa en horizontal sobre
- * un mostrador: abajo está el borde que tapa la mano al escribir, y a la
- * izquierda queda el pulgar de quien la sostiene. Es también donde cabe el
- * nombre de cada módulo sin abreviarlo a un icono adivinable.
+ * Carril lateral, no pestañas inferiores. En horizontal, abajo está el borde
+ * que tapa la mano al escribir, y a la izquierda queda el pulgar de quien la
+ * sostiene. Es también donde cabe el nombre de cada módulo sin abreviarlo a un
+ * icono adivinable.
+ *
+ * En vertical el carril se acuesta: una barra arriba con los módulos en fila
+ * desplazable. Al lado se comería un cuarto de los 800 dp de ancho.
  *
  * Aquí vive la guarda de sesión: todo lo que cuelgue de esta carpeta exige
  * personal autenticado, y las pantallas de dentro pueden usar `useStaff()` sin
@@ -32,6 +35,7 @@ interface Modulo {
     | '/clientes'
     | '/reportes'
     | '/impresora'
+    | '/etiquetas'
   label: string
   /** Sin este permiso el módulo no se pinta: no se ofrecen callejones sin salida. */
   permission: string
@@ -49,6 +53,8 @@ const MODULOS: Modulo[] = [
   { href: '/productos', label: 'Productos', permission: 'inventory.write' },
   { href: '/historial', label: 'Historial', permission: 'orders.read' },
   { href: '/inventario', label: 'Inventario', permission: 'inventory.read' },
+  // Etiquetar lo que llega lo hace cualquiera en el mostrador, también la cajera.
+  { href: '/etiquetas', label: 'Etiquetas', permission: 'inventory.read' },
   { href: '/clientes', label: 'Clientes', permission: 'customers.read' },
   // Va al final y con 'reports.read': la cajera no lo verá siquiera, que es lo
   // que decidió la migración 0058 al colgar el reporte de ese permiso.
@@ -88,6 +94,7 @@ function Marco() {
   const impresora = useImpresora()
   const router = useRouter()
   const pathname = usePathname()
+  const vertical = useVertical()
 
   useEffect(() => {
     void cargarImpresora()
@@ -99,9 +106,9 @@ function Marco() {
   const visibles = MODULOS.filter((m) => can(m.permission))
 
   return (
-    <SafeAreaView style={l.marco} edges={['top', 'bottom', 'left']}>
-      <View style={l.carril}>
-        <View style={l.marca}>
+    <SafeAreaView style={[l.marco, vertical && l.marcoVertical]} edges={['top', 'bottom', 'left', 'right']}>
+      <View style={[l.carril, vertical && l.carrilVertical]}>
+        <View style={[l.marca, vertical && l.marcaVertical]}>
           {/* Versión en hueso: el carril es negro editorial y el logotipo en
               tinta sería invisible sobre él. */}
           <Image
@@ -115,7 +122,12 @@ function Marco() {
 
         {/* Con desplazamiento: en una tablet de 8" los nueve módulos no caben
             en alto, y un módulo cortado es un módulo que no existe. */}
-        <ScrollView style={l.modulos} contentContainerStyle={l.modulosLista}>
+        <ScrollView
+          horizontal={vertical}
+          showsHorizontalScrollIndicator={false}
+          style={l.modulos}
+          contentContainerStyle={[l.modulosLista, vertical && l.modulosFila]}
+        >
           {visibles.map((modulo) => {
             // Coincidencia exacta o con barra detrás. Con `startsWith` a secas,
             // dos rutas que comparten prefijo se iluminarían a la vez.
@@ -128,7 +140,8 @@ function Marco() {
                 accessibilityState={{ selected: activo }}
                 style={({ pressed }) => [
                   l.modulo,
-                  activo && l.moduloActivo,
+                  vertical && l.moduloVertical,
+                  activo && (vertical ? l.moduloActivoVertical : l.moduloActivo),
                   pressed && !activo && l.moduloPulsado,
                 ]}
               >
@@ -158,11 +171,11 @@ function Marco() {
           onPress={() => void signOut()}
           accessibilityRole="button"
           accessibilityLabel="Cerrar sesión"
-          style={({ pressed }) => [l.cajera, pressed && l.moduloPulsado]}
+          style={({ pressed }) => [l.cajera, vertical && l.cajeraVertical, pressed && l.moduloPulsado]}
         >
           {/* En compacto el rol se omite: el nombre basta para saber quién
               cobra, y ese renglón es un módulo más a la vista. */}
-          {compacto ? null : (
+          {compacto || vertical ? null : (
             <Text style={[s.label, l.cajeraRol]} numberOfLines={1}>
               {staff.role.name}
             </Text>
@@ -183,6 +196,7 @@ function Marco() {
 
 const l = StyleSheet.create({
   marco: { flex: 1, flexDirection: 'row', backgroundColor: color.surface },
+  marcoVertical: { flexDirection: 'column' },
   // En compacto el carril cede 36 dp al contenido: en 1000 dp de ancho, la
   // pantalla de venta los necesita más que la etiqueta de un módulo.
   carril: {
@@ -190,12 +204,22 @@ const l = StyleSheet.create({
     backgroundColor: color['editorial-ink'],
     paddingVertical: space.gutter,
   },
+  carrilVertical: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 0,
+    paddingHorizontal: space.gap,
+    height: size.touchMin + 8,
+  },
+  marcaVertical: { paddingHorizontal: space.gap, paddingBottom: 0 },
   marca: { paddingHorizontal: space.gutter, paddingBottom: space.sectionSm },
   // 136 px útiles en el carril (168 menos los dos gutter). 120 deja aire a los
   // lados; la altura sale de la proporción 2.75:1 del arte.
   logotipo: compacto ? { width: 96, height: 35, marginBottom: 2 } : { width: 120, height: 44, marginBottom: 2 },
   modulos: { flex: 1 },
   modulosLista: { gap: 2 },
+  modulosFila: { alignItems: 'stretch' },
   modulo: {
     minHeight: size.touchMin,
     flexDirection: 'row',
@@ -220,6 +244,17 @@ const l = StyleSheet.create({
     backgroundColor: color['on-primary-fixed-variant'],
     borderLeftColor: color['on-primary'],
   },
+  // Acostado, la marca del activo va abajo, como una pestaña.
+  moduloVertical: {
+    paddingHorizontal: space.gap + 4,
+    borderLeftWidth: 0,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  moduloActivoVertical: {
+    backgroundColor: color['on-primary-fixed-variant'],
+    borderBottomColor: color['on-primary'],
+  },
   moduloPulsado: { backgroundColor: color['on-primary-fixed-variant'] },
   moduloTexto: { ...text.navLink, color: color['on-primary-container'] },
   moduloTextoActivo: { color: color['on-primary'] },
@@ -230,6 +265,16 @@ const l = StyleSheet.create({
     paddingTop: space.gap,
     marginTop: space.gap,
     gap: 2,
+  },
+  cajeraVertical: {
+    borderTopWidth: 0,
+    borderLeftWidth: 1,
+    borderLeftColor: color['on-primary-fixed-variant'],
+    marginTop: 0,
+    paddingTop: 0,
+    paddingHorizontal: space.gap,
+    maxWidth: 160,
+    justifyContent: 'center',
   },
   cajeraRol: { color: color['on-primary-container'] },
   salir: { color: color['on-primary-container'], marginTop: 6 },

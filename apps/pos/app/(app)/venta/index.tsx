@@ -20,7 +20,7 @@ import { SaleDoneSheet } from '@/features/receipt/SaleDoneSheet'
 import { useSession, useStaff } from '@/lib/session'
 import { supabaseUrl } from '@/lib/supabase'
 import { Button } from '@/ui/Button'
-import { color, compacto, s, size, space, text } from '@/theme'
+import { color, compacto, s, size, space, text, useVertical } from '@/theme'
 
 /**
  * Ancho mínimo de una tarjeta de la rejilla. Las columnas salen de cuántas
@@ -32,7 +32,8 @@ const TARJETA_MIN = 160
 /**
  * La pantalla de venta. Es la que está abierta el 90 % del día.
  *
- * Dos columnas: catálogo a la izquierda, carrito a la derecha. El objetivo del
+ * Dos columnas: catálogo a la izquierda, carrito a la derecha (en vertical,
+ * catálogo arriba y carrito abajo, con el total siempre a la vista). El objetivo del
  * plan son 15 segundos por venta, y de ahí salen las decisiones:
  *
  *  - El campo de búsqueda tiene el foco al abrir y lo RECUPERA tras cada
@@ -59,6 +60,7 @@ export default function Venta() {
     correo: string | null
   } | null>(null)
   const campo = useRef<TextInput>(null)
+  const vertical = useVertical()
 
   const hayTurno = staff.open_session !== null
 
@@ -101,11 +103,15 @@ export default function Venta() {
     if (texto === '') return
 
     const hits = await buscarYa(texto)
-    if (hits.length === 1) añadir(hits[0]!)
+    // Lo escaneado es un código entero: si coincide exacto con una variante,
+    // es esa aunque su SKU sea prefijo de otros («1001» y «1001-CH»).
+    const exacta = hits.find((h) => h.barcode === texto || h.sku.toUpperCase() === texto.toUpperCase())
+    if (exacta) añadir(exacta)
+    else if (hits.length === 1) añadir(hits[0]!)
   }, [query, buscarYa, añadir])
 
   return (
-    <View style={v.pantalla}>
+    <View style={[v.pantalla, vertical && v.pantallaVertical]}>
       {/* ---------------- Catálogo ---------------- */}
       <View
         style={v.catalogo}
@@ -167,7 +173,7 @@ export default function Venta() {
       </View>
 
       {/* ---------------- Carrito ---------------- */}
-      <View style={v.carrito}>
+      <View style={[v.carrito, vertical && v.carritoVertical]}>
         <View style={v.carritoCabecera}>
           <Text style={s.labelStrong}>Venta</Text>
           <Text style={s.label}>{carrito.totals.itemCount} pzs</Text>
@@ -397,6 +403,7 @@ function LineaCarrito({
 
 const v = StyleSheet.create({
   pantalla: { flex: 1, flexDirection: 'row' },
+  pantallaVertical: { flexDirection: 'column' },
 
   catalogo: { flex: 3, padding: space.gutter },
   buscador: {
@@ -451,6 +458,18 @@ const v = StyleSheet.create({
     backgroundColor: color['paper-bright'],
     borderLeftWidth: 1,
     borderLeftColor: color.primary,
+  },
+  // Abajo y a lo ancho. 46 % del alto: caben cuatro o cinco renglones, el
+  // total y COBRAR sin que la rejilla de arriba se quede en una fila.
+  carritoVertical: {
+    width: '100%',
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    height: '46%',
+    borderLeftWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: color.primary,
   },
   carritoCabecera: {
     flexDirection: 'row',

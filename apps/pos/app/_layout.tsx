@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { useKeepAwake } from 'expo-keep-awake'
 import { useFonts } from 'expo-font'
 
+import { AvisoActualizacion } from '@/lib/actualizaciones'
 import { SessionProvider } from '@/lib/session'
 import { color } from '@/theme'
 
@@ -56,6 +57,9 @@ export default function RootLayout() {
   return (
     <SessionProvider>
       <StatusBar style="dark" />
+      {/* Arriba de todo, incluida la pantalla de ingreso: una tablet que no
+          puede entrar por un fallo ya corregido tiene que poder actualizarse. */}
+      <AvisoActualizacion />
       <Stack
         screenOptions={{
           headerShown: false,

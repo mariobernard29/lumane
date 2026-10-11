@@ -12,6 +12,8 @@ export interface DispositivoBt {
   nombre: string
   mac: string
   esImpresora: boolean
+  /** Lo trae el build con Bluetooth LE; los anteriores no lo mandan. */
+  tipo?: 'clasico' | 'ble' | 'dual' | 'desconocido'
 }
 
 interface ImpresoraBtNativo {
@@ -23,6 +25,8 @@ interface ImpresoraBtNativo {
   emparejar(mac: string, pines: string[]): Promise<DispositivoBt>
   conectar(mac: string): Promise<void>
   escribir(mac: string, base64: string): Promise<void>
+  /** Por qué transporte imprimió por última vez. Solo en el build con Bluetooth LE. */
+  transporte?(mac: string): 'clasico' | 'ble' | null
   desconectar(): Promise<void>
   conectada(): boolean
 }

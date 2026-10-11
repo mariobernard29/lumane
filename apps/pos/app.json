@@ -3,11 +3,12 @@
     "name": "Lumane POS",
     "slug": "lumane-pos",
     "version": "1.0.0",
-    "orientation": "landscape",
+    "orientation": "default",
     "scheme": "lumanepos",
     "userInterfaceStyle": "light",
     "platforms": [
-      "android"
+      "android",
+      "web"
     ],
     "android": {
       "package": "mx.lumane.pos",

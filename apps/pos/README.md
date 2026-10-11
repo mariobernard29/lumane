@@ -171,12 +171,44 @@ pnpm --filter @lumane/pos start                # probar el cambio aquí
 npx eas update --channel preview               # publicarlo
 ```
 
-La tablet lo recoge sola la próxima vez que se abra la app. Nadie tiene que
-conectar nada.
+La tablet lo busca al volver a primer plano y cada 15 minutos, lo descarga en
+segundo plano y enseña arriba **«Hay una versión nueva de Lumane POS lista ·
+Actualizar ahora»**. No se reinicia sola: puede haber una venta a medias.
+Nadie tiene que conectar nada (ver `src/lib/actualizaciones.tsx`).
 
 **La excepción**: las actualizaciones por aire llevan JavaScript, no código
-nativo. Añadir un módulo nativo —la impresión Bluetooth, sin ir más lejos—
-obliga a compilar un APK nuevo e instalarlo a mano esa vez.
+nativo. Un cambio nativo —un permiso, la orientación, el Bluetooth— obliga a
+compilar un APK nuevo. Para que la tablet se entere sola:
+
+1. Sube `version` en `app.json` (`1.1.0` → `1.2.0`). La versión es también
+   el `runtimeVersion`: las actualizaciones por aire de una versión no llegan
+   a APKs de otra, que es justo lo que evita mandar JavaScript nuevo a un
+   nativo viejo que no lo soporta.
+2. `pnpm --filter @lumane/pos build:preview` y copia el enlace del APK.
+3. Apunta la tablet al APK nuevo en Supabase → SQL Editor:
+
+   ```sql
+   insert into public.pos_release (version, apk_url, notas)
+   values ('1.2.0', 'https://expo.dev/artifacts/eas/….apk', 'Qué trae, en una línea')
+   on conflict (id) do update
+     set version = excluded.version, apk_url = excluded.apk_url,
+         notas = excluded.notas, published_at = now();
+   ```
+
+   Las tablets con una versión menor enseñan **«Hay que instalar la versión
+   1.2.0 · Descargar»**. Se baja y se instala encima; no se pierde nada.
+
+### Verla en la computadora
+
+```bash
+pnpm --filter @lumane/pos web
+```
+
+Abre el POS en el navegador (http://localhost:8081) contra la base real, para
+revisar pantallas sin tablet ni emulador. Sin Bluetooth: Impresora dice que
+falta el módulo. La sesión va a `localStorage` (`src/web/secure-store.ts`,
+que Metro solo usa en web); el APK sigue usando el Keystore. Para probar la
+vertical, pon la ventana más alta que ancha.
 
 ### Antes de compilar, dos cosas que muerden
 
@@ -199,10 +231,12 @@ obliga a compilar un APK nuevo e instalarlo a mano esa vez.
 | Venta | ✅ búsqueda por código de barras, SKU, nombre y categoría; carrito; cobro |
 | Cobro | ✅ efectivo con cambio, tarjeta, transferencia y **pagos mixtos** |
 | Caja | ✅ apertura con fondo, entradas y salidas, corte con diferencia |
-| Impresión | ⏳ los bytes ESC/POS están hechos y probados; falta el transporte Bluetooth |
-| Pedidos en línea | ⏳ bandeja en vivo, cambio de estado, devoluciones |
-| Inventario | ⏳ Fase 3 |
-| Clientes | ⏳ Fase 3 |
+| Impresión de tickets | ✅ ESC/POS por Bluetooth clásico o LE: venta, reimpresión, corte |
+| Etiquetas de prendas | ✅ TSPL para la Hanna58: monograma, nombre, talla, precio, código y SKU |
+| Pedidos en línea | ✅ bandeja en vivo, cambio de estado, devoluciones |
+| Inventario y Clientes | ✅ |
+| Horizontal y vertical | ✅ en vertical el carril pasa a barra superior |
+| Aviso de versión nueva | ✅ por aire y de APK (`pos_release`) |
 | Icono y splash | ⛔ **faltan**: hace falta arte a 1024×1024 |
 
 > El icono es lo único de esta lista que se ve **desde fuera del mostrador**.
@@ -252,6 +286,26 @@ tomara por un reintento de la anterior y devolviera el ticket viejo sin cobrar.
 
 ---
 
+## Etiquetas de prendas
+
+La Hanna58 de SICAR es una **etiquetadora TSPL**, no una impresora de tickets:
+no entiende ESC/POS, y la Moon58W no entiende TSPL. Por eso son dos impresoras
+con su propia MAC en Impresora › Tickets y Impresora › Etiquetas.
+
+- **Etiquetas** (módulo del carril): se escanea o busca la prenda, cada toque
+  suma una etiqueta, «Imprimir» las manda. Desde la ficha de una prenda,
+  «Etiquetas» trae todas sus tallas con una copia por pieza en existencia.
+- **Impresora › Etiquetas**: la medida del rollo (catálogo de 14, de 30×20 a
+  58×60 y colgantes, o una a mano), oscuridad, velocidad, desplazamiento y
+  giro. «Imprimir etiqueta de prueba» saca un recuadro al borde: si sale
+  cortado o corrido, se ajusta el desplazamiento.
+- La plantilla vive en `@lumane/core` (`etiqueta.ts`, `tspl.ts`) y se compone
+  para la medida. Las pruebas comprueban en los 14 tamaños que nada se salga
+  ni se encime; la vista previa de la pantalla se dibuja con los mismos bytes.
+- El código de barras es el **SKU** en Code 128, o el EAN-13 del proveedor si
+  la variante lo tiene. El escáner de Venta lo reconoce aunque el SKU sea
+  prefijo de otro.
+
 ## Impresión
 
 `@lumane/core` construye los bytes ESC/POS (`buildSaleTicket`) y no sabe nada de
@@ -259,5 +313,17 @@ Bluetooth: esa separación es a propósito. Los modelos de impresora térmica so
 heterogéneos y lo único comprobable sin tener una delante es que los bytes sean
 los correctos — que es lo que está verificado, a 32 y a 48 columnas.
 
-El transporte se conectará cuando haya impresora física con la que probar. El
-respaldo previsto sigue en pie: mandar el ticket por WhatsApp.
+El transporte es `modules/impresora-bt`, un módulo nativo propio:
+
+1. **Bluetooth clásico (SPP)**: canal seguro, inseguro y RFCOMM 1, en ese orden.
+2. **Bluetooth LE (GATT)**: para las impresoras baratas que solo hablan LE. No
+   se emparejan (por eso el PIN «fallaba» en los ajustes de Android): se
+   buscan en Impresora › «Emparejar desde aquí», se tocan y se usan.
+
+Se recuerda qué transporte funcionó con cada impresora, y Impresora lo enseña
+(«Bluetooth LE» o «clásico») junto al nombre.
+
+> **Si los tickets no salen**, lo primero es la versión de la app: el APK
+> anterior al 11 de octubre de 2026 no traía ni la conexión tolerante ni LE.
+> Con el APK nuevo: Impresora › Tickets › Emparejar desde aquí › Buscar,
+> tocar la Moon58W, «Imprimir página de prueba».
