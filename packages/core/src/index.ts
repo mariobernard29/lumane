@@ -81,3 +81,33 @@ export {
   type ValorOpcion,
   type VarianteEditable,
 } from './variantes.ts'
+
+export {
+  FUENTES_TSPL,
+  leerEtiqueta,
+  medirTexto,
+  modulosDeCodigo,
+  PUNTOS_POR_MM,
+  tipoDeCodigo,
+  TsplBuilder,
+  type ConfigEtiquetadora,
+  type ElementoEtiqueta,
+  type EtiquetaLeída,
+  type FuenteTspl,
+  type TipoCodigo,
+} from './tspl.ts'
+
+export {
+  buildEtiquetaPrueba,
+  buildEtiquetas,
+  dibujarEtiqueta,
+  FORMATOS_ETIQUETA,
+  MEDIDA_MAXIMA_MM,
+  MEDIDA_MINIMA_MM,
+  precioEtiqueta,
+  type AjustesEtiqueta,
+  type DatosEtiqueta,
+  type FormatoEtiqueta,
+} from './etiqueta.ts'
+
+export { MONOGRAMAS } from './logo-etiqueta.ts'

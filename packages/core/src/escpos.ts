@@ -81,7 +81,7 @@ const SIN_ACENTO: Record<string, string> = {
   '“': '"', '”': '"', '‘': "'", '’': "'", '…': '...',
 }
 
-function encodeText(text: string): number[] {
+export function encodeText(text: string): number[] {
   const bytes: number[] = []
 
   for (const char of text) {
