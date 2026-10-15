@@ -148,9 +148,10 @@ function codigoPara(d: DatosEtiqueta, ancho: number): Codigo {
   const valor = (d.codigoBarras?.trim() || d.sku).toUpperCase()
   const tipo = tipoDeCodigo(valor)
   const modulos = modulosDeCodigo(valor, tipo)
-  // Módulo de 2 puntos (0.25 mm) es lo que lee bien cualquier lector; 3 si
-  // sobra sitio, 1 solo si no queda otra.
-  const modulo = Math.max(1, Math.min(3, Math.floor(ancho / modulos)))
+  // Módulo de 2 puntos (0.25 mm) es lo que lee bien cualquier lector, y no se
+  // pasa de ahí aunque sobre sitio: un código de 3 se come la etiqueta. 1
+  // solo si no queda otra.
+  const modulo = Math.max(1, Math.min(2, Math.floor(ancho / modulos)))
   return { valor, tipo, modulo, ancho: modulos * modulo }
 }
 
@@ -163,7 +164,9 @@ export function dibujarEtiqueta(t: TsplBuilder, d: DatosEtiqueta): string[] {
   const W = t.anchoPuntos
   const H = t.altoPuntos
   const avisos: string[] = []
-  const margen = Math.max(8, Math.round(Math.min(W, H) * 0.05))
+  // 1.5 mm de borde como mínimo: la etiqueta física casi nunca cae exacta
+  // bajo el cabezal y lo que roza la orilla sale cortado.
+  const margen = Math.max(12, Math.round(Math.min(W, H) * 0.06))
   const util = W - margen * 2
   const colgante = H > W * 1.15
 
@@ -200,12 +203,23 @@ function apaisada(t: TsplBuilder, d: DatosEtiqueta, m: Medidas): void {
   const { W, H, margen, util, codigo, precio, sku } = m
   const interior = H - margen * 2
 
-  // Reparto del alto: cabecera 30 %, renglón de precio 24 %, código el resto.
-  const altoCabecera = Math.round(interior * 0.3)
-  const altoPrecio = Math.round(interior * 0.24)
-  const fuenteSku: FuenteTspl = interior >= 200 ? '2' : '1'
+  // Cada bloque tiene un tope de alto y lo que sobra se reparte de aire
+  // entre ellos: con los bloques estirados al alto disponible, en 50 × 25 el
+  // precio, el código y el nombre se pegaban y la etiqueta salía saturada.
+  // En 25 mm de alto: cabecera de 5.5 mm, precio de 3 mm, barras de 5 mm.
+  const altoCabecera = Math.round(interior * 0.26)
+  const fuenteSku: FuenteTspl = interior >= 240 ? '2' : '1'
   const altoSku = FUENTES_TSPL[fuenteSku].alto
-  const separa = Math.max(3, Math.round(interior * 0.025))
+  const altoBarras = Math.max(24, Math.min(72, Math.round(interior * 0.24)))
+
+  const fPrecio =
+    fuenteQueCabe(precio, Math.round(util * 0.55), Math.round(interior * 0.16), { max: '4', min: '2' }) ??
+    ({ fuente: '2', escala: 1 } as const)
+  const mPrecio = medirTexto(precio, fPrecio.fuente, fPrecio.escala)
+  const altoPrecio = mPrecio.alto
+
+  const ocupado = altoCabecera + altoPrecio + altoBarras + 2 + altoSku
+  const aire = Math.max(3, Math.floor((interior - ocupado) / 2))
 
   // ---- Cabecera: monograma a la izquierda, nombre a su lado ----
   let y = margen
@@ -216,15 +230,11 @@ function apaisada(t: TsplBuilder, d: DatosEtiqueta, m: Medidas): void {
     xNombre = margen + logo.width + Math.max(6, Math.round(logo.width * 0.25))
   }
   const anchoNombre = W - margen - xNombre
-  escribirNombre(t, d.nombre, xNombre, y, anchoNombre, altoCabecera, 'left')
-  y += altoCabecera + separa
+  escribirNombre(t, d.nombre, xNombre, y, anchoNombre, altoCabecera, 'left', '3')
+  y += altoCabecera + aire
 
   // ---- Talla/color a la izquierda, precio a la derecha ----
-  const fPrecio =
-    fuenteQueCabe(precio, Math.round(util * 0.6), altoPrecio, { max: '5', min: '2', escalas: [1] }) ??
-    ({ fuente: '2', escala: 1 } as const)
-  const mPrecio = medirTexto(precio, fPrecio.fuente, fPrecio.escala)
-  t.texto(W - margen - mPrecio.ancho, y + Math.max(0, altoPrecio - mPrecio.alto), precio, fPrecio.fuente, fPrecio.escala)
+  t.texto(W - margen - mPrecio.ancho, y, precio, fPrecio.fuente, fPrecio.escala)
 
   if (d.detalle) {
     const libre = util - mPrecio.ancho - 8
@@ -235,17 +245,17 @@ function apaisada(t: TsplBuilder, d: DatosEtiqueta, m: Medidas): void {
     const columnas = Math.floor(libre / FUENTES_TSPL['1'].ancho)
     const opciones = [d.detalle, talla, talla.slice(0, columnas)]
     for (const texto of opciones) {
-      const f = fuenteQueCabe(texto, libre, altoPrecio, { max: '3', min: '1' })
+      // Un punto más chica que el precio, que es lo que se lee primero.
+      const f = fuenteQueCabe(texto, libre, altoPrecio, { max: '2', min: '1' })
       if (!f || texto.trim() === '') continue
       const md = medirTexto(texto, f.fuente, f.escala)
       t.texto(margen, y + Math.max(0, altoPrecio - md.alto), texto, f.fuente, f.escala)
       break
     }
   }
-  y += altoPrecio + separa
+  y += altoPrecio + aire
 
   // ---- Código de barras y SKU, centrados ----
-  const altoBarras = Math.max(24, H - margen - y - altoSku - 2)
   t.codigoBarras(Math.max(PUNTOS_POR_MM, Math.round((W - codigo.ancho) / 2)), y, codigo.tipo, altoBarras, codigo.modulo, codigo.valor)
   const mSku = medirTexto(sku, fuenteSku)
   t.texto(Math.max(margen, Math.round((W - mSku.ancho) / 2)), y + altoBarras + 2, sku, fuenteSku)
@@ -306,8 +316,9 @@ function escribirNombre(
   ancho: number,
   alto: number,
   alinear: 'left' | 'center',
+  max: FuenteTspl = '4',
 ): number {
-  const candidatas: FuenteTspl[] = ['4', '3', '2', '1']
+  const candidatas = (['4', '3', '2', '1'] as FuenteTspl[]).filter((f) => Number(f) <= Number(max))
   let elegido: { fuente: FuenteTspl; lineas: string[] } | null = null
   for (const fuente of candidatas) {
     const f = FUENTES_TSPL[fuente]
