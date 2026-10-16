@@ -88,6 +88,7 @@ export {
   medirTexto,
   modulosDeCodigo,
   PUNTOS_POR_MM,
+  rasterizarEtiqueta,
   tipoDeCodigo,
   TsplBuilder,
   type ConfigEtiquetadora,
@@ -100,14 +101,22 @@ export {
 export {
   buildEtiquetaPrueba,
   buildEtiquetas,
+  componerEtiqueta,
   dibujarEtiqueta,
   FORMATOS_ETIQUETA,
   MEDIDA_MAXIMA_MM,
   MEDIDA_MINIMA_MM,
   precioEtiqueta,
+  PRENDA_DE_MUESTRA,
   type AjustesEtiqueta,
+  type ComposicionEtiqueta,
   type DatosEtiqueta,
   type FormatoEtiqueta,
+  type PapelTexto,
+  type PiezaEtiqueta,
 } from './etiqueta.ts'
+
+export { aBase64, anchoTexto, letra, tamañosDe, textoEnBits, type Letra, type Peso } from './letras.ts'
+export { pngDataUri, pngDeRaster } from './png.ts'
 
 export { MONOGRAMAS } from './logo-etiqueta.ts'

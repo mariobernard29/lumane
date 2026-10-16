@@ -232,7 +232,7 @@ vertical, pon la ventana más alta que ancha.
 | Cobro | ✅ efectivo con cambio, tarjeta, transferencia y **pagos mixtos** |
 | Caja | ✅ apertura con fondo, entradas y salidas, corte con diferencia |
 | Impresión de tickets | ✅ ESC/POS por Bluetooth clásico o LE: venta, reimpresión, corte |
-| Etiquetas de prendas | ✅ TSPL para la Hanna58: monograma, nombre, talla, precio, código y SKU |
+| Etiquetas de prendas | ✅ TSPL para la Hanna58: monograma, nombre, talla, código de pieza y precio |
 | Pedidos en línea | ✅ bandeja en vivo, cambio de estado, devoluciones |
 | Inventario y Clientes | ✅ |
 | Horizontal y vertical | ✅ en vertical el carril pasa a barra superior |
@@ -301,10 +301,14 @@ con su propia MAC en Impresora › Tickets y Impresora › Etiquetas.
   cortado o corrido, se ajusta el desplazamiento.
 - La plantilla vive en `@lumane/core` (`etiqueta.ts`, `tspl.ts`) y se compone
   para la medida. Las pruebas comprueban en los 14 tamaños que nada se salga
-  ni se encime; la vista previa de la pantalla se dibuja con los mismos bytes.
-- El código de barras es el **SKU** en Code 128, o el EAN-13 del proveedor si
-  la variante lo tiene. El escáner de Venta lo reconoce aunque el SKU sea
-  prefijo de otro.
+  ni se encime; la vista previa de la pantalla se pinta con los mismos bytes.
+- **Sin código de barras**: en la boutique no hay lector. Ese sitio es para
+  que el nombre, el **código de pieza** (el SKU) y el precio se lean de lejos.
+- **Los textos van como imagen**, en Figtree (`letras.ts`): la Hanna58 imprime
+  sus fuentes residentes 2, 3 y 4 del mismo tamaño (~1.5 mm por letra), y una
+  plantilla que confía en ellas sale chica y apretada. Las letras se generan
+  una vez con `node scripts/letra-etiqueta.mjs`. Cada prenda distinta son
+  ~3.5 KB por Bluetooth; las copias no se vuelven a mandar.
 
 ## Impresión
 

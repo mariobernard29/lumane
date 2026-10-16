@@ -1,29 +1,30 @@
 /**
  * La etiqueta de las prendas: monograma de Lumane, nombre, talla y color,
- * precio, código de barras y SKU.
+ * código de pieza (el SKU) y precio.
+ *
+ * Sin código de barras: en la boutique no hay lector, y lo que se teclea en
+ * Venta es el código de pieza, así que ese espacio es para que el código, el
+ * precio y el nombre se lean de lejos.
+ *
+ * Los textos van como IMAGEN, con Figtree (ver `letras.ts`): la Hanna58
+ * imprime sus fuentes residentes 2, 3 y 4 del mismo tamaño, y una plantilla
+ * que confía en ellas sale chica y apretada.
  *
  * El diseño se calcula para la medida de la etiqueta en vez de fijarse para
- * una sola: los rollos cambian de proveedor y de tamaño, y una plantilla
- * pensada para 50 × 30 mm sale cortada en 40 × 25. Hay dos composiciones:
+ * una sola: los rollos cambian de proveedor y de tamaño. Hay dos composiciones:
  *
- *  - **Apaisada** (más ancha que alta, la mayoría): monograma y nombre arriba,
- *    talla y precio en medio, código de barras abajo.
- *  - **Colgante** (más alta que ancha, 40 × 60): todo centrado en columna.
+ *  - **Apaisada** (más ancha que alta, la mayoría): monograma y nombre arriba;
+ *    abajo, talla y código de pieza a la izquierda y el precio en grande a la
+ *    derecha, sobre la misma línea base que el código.
+ *  - **Colgante** (más alta que ancha o casi cuadrada: 40 × 60, 58 × 60):
+ *    todo centrado en columna.
  *
  * Todo en puntos: 8 por milímetro a 203 dpi.
  */
-import { MONOGRAMAS } from './logo-etiqueta.ts'
 import type { RasterImage } from './escpos.ts'
-import {
-  FUENTES_TSPL,
-  medirTexto,
-  modulosDeCodigo,
-  PUNTOS_POR_MM,
-  tipoDeCodigo,
-  TsplBuilder,
-  type ConfigEtiquetadora,
-  type FuenteTspl,
-} from './tspl.ts'
+import { anchoTexto, letra, partirEnRenglones, recortar, tamañosDe, textoEnBits, type Letra, type TextoEnBits } from './letras.ts'
+import { MONOGRAMAS } from './logo-etiqueta.ts'
+import { TsplBuilder, type ConfigEtiquetadora } from './tspl.ts'
 
 export interface FormatoEtiqueta {
   id: string
@@ -36,7 +37,7 @@ export interface FormatoEtiqueta {
 /**
  * Las medidas de etiqueta que se venden para etiquetadoras de 58 mm en
  * México. El ancho máximo de la Hanna58 es 58 mm; por debajo de 30 × 20 no
- * caben a la vez el monograma, el precio y un código de barras legible.
+ * caben a la vez el monograma, el nombre y un precio legible.
  */
 export const FORMATOS_ETIQUETA: readonly FormatoEtiqueta[] = [
   { id: '30x20', nombre: '30 × 20 mm', anchoMm: 30, altoMm: 20, separacionMm: 2 },
@@ -64,8 +65,6 @@ export interface DatosEtiqueta {
   detalle: string | null
   precioCents: number
   sku: string
-  /** El de proveedor, si la variante lo tiene. Si no, se codifica el SKU. */
-  codigoBarras: string | null
   copias: number
 }
 
@@ -83,50 +82,18 @@ export function precioEtiqueta(cents: number): string {
 // Composición
 // ---------------------------------------------------------------------------
 
-const FUENTES: FuenteTspl[] = ['5', '4', '3', '2', '1']
+export type PapelTexto = 'nombre' | 'detalle' | 'sku' | 'precio'
 
-/** La fuente (y su escala) más grande cuyo texto cabe en `ancho` × `alto`. */
-function fuenteQueCabe(
-  texto: string,
-  ancho: number,
-  alto: number,
-  opciones: { min?: FuenteTspl; max?: FuenteTspl; escalas?: number[] } = {},
-): { fuente: FuenteTspl; escala: number } | null {
-  const escalas = opciones.escalas ?? [1]
-  const desde = FUENTES.indexOf(opciones.max ?? '5')
-  const hasta = FUENTES.indexOf(opciones.min ?? '1')
-  for (const escala of [...escalas].sort((a, b) => b - a)) {
-    for (let i = desde; i <= hasta; i++) {
-      const fuente = FUENTES[i]!
-      const m = medirTexto(texto, fuente, escala)
-      if (m.ancho <= ancho && m.alto <= alto) return { fuente, escala }
-    }
-  }
-  return null
-}
+/** Lo que lleva una etiqueta, ya colocado, antes de convertirse en TSPL. */
+export type PiezaEtiqueta =
+  | { tipo: 'texto'; papel: PapelTexto; contenido: string; letra: number; x: number; y: number; imagen: RasterImage }
+  | { tipo: 'logo'; x: number; y: number; imagen: RasterImage }
+  | { tipo: 'linea'; x: number; y: number; ancho: number; alto: number }
 
-/** Parte por palabras en renglones de `columnas` caracteres; corta con «.» lo que no cabe. */
-function renglones(texto: string, columnas: number, maximo: number): string[] {
-  const palabras = texto.trim().split(/\s+/).filter(Boolean)
-  const salida: string[] = []
-  let actual = ''
-  for (const p of palabras) {
-    const candidato = actual ? `${actual} ${p}` : p
-    if (candidato.length <= columnas) {
-      actual = candidato
-      continue
-    }
-    if (actual) salida.push(actual)
-    actual = p.length > columnas ? p.slice(0, columnas) : p
-  }
-  if (actual) salida.push(actual)
-  if (salida.length > maximo) {
-    const ultimos = salida.slice(0, maximo)
-    const u = ultimos[maximo - 1]!
-    ultimos[maximo - 1] = u.length >= columnas ? `${u.slice(0, columnas - 1)}.` : `${u}.`
-    return ultimos
-  }
-  return salida
+export interface ComposicionEtiqueta {
+  piezas: PiezaEtiqueta[]
+  /** Lo que no cupo entero: la pantalla lo enseña, no frena la impresión. */
+  avisos: string[]
 }
 
 /** El monograma más alto que no pasa de `alto` puntos. */
@@ -136,216 +103,269 @@ function monograma(alto: number): RasterImage | null {
   return elegido
 }
 
-interface Codigo {
-  valor: string
-  tipo: ReturnType<typeof tipoDeCodigo>
-  modulo: number
-  ancho: number
+/** Tamaños de un peso de mayor a menor, entre `min` y `max`. */
+function tamañosEntre(peso: 'bold' | 'extrabold', min: number, max: number): number[] {
+  const todos = tamañosDe(peso)
+  const dentro = todos.filter((t) => t >= min && t <= max).reverse()
+  return dentro.length ? dentro : [todos.filter((t) => t <= max).at(-1) ?? todos[0]!]
 }
 
-/** Valor, tipo y grosor de barra del código para un ancho disponible. */
-function codigoPara(d: DatosEtiqueta, ancho: number): Codigo {
-  const valor = (d.codigoBarras?.trim() || d.sku).toUpperCase()
-  const tipo = tipoDeCodigo(valor)
-  const modulos = modulosDeCodigo(valor, tipo)
-  // Módulo de 2 puntos (0.25 mm) es lo que lee bien cualquier lector, y no se
-  // pasa de ahí aunque sobre sitio: un código de 3 se come la etiqueta. 1
-  // solo si no queda otra.
-  const modulo = Math.max(1, Math.min(2, Math.floor(ancho / modulos)))
-  return { valor, tipo, modulo, ancho: modulos * modulo }
+interface Bloque {
+  texto: TextoEnBits
+  letra: Letra
+  contenido: string
+  completo: boolean
+}
+
+/** El texto en la letra más grande (de `tamaños`) que lo deja entero en `renglones` de `ancho`. */
+function bloqueQueCabe(
+  texto: string,
+  tamaños: number[],
+  ancho: number,
+  renglones: number,
+  alinear: 'left' | 'center' | 'right' = 'left',
+): Bloque {
+  let ultimo: Bloque | null = null
+  for (const t of tamaños) {
+    const l = letra('bold', t)
+    const p = partirEnRenglones(texto, l, ancho, renglones)
+    ultimo = {
+      texto: textoEnBits(p.renglones, l, { alinear, interlineado: Math.round(l.tamaño * 1.12) }),
+      letra: l,
+      contenido: p.renglones.join(' '),
+      completo: p.completo,
+    }
+    if (p.completo) return ultimo
+  }
+  return ultimo!
+}
+
+/** El texto en un renglón con la letra más grande de `tamaños` que cabe en `ancho`, o `null`. */
+function renglonQueCabe(texto: string, tamaños: number[], ancho: number, alinear: 'left' | 'center'): Bloque | null {
+  for (const t of tamaños) {
+    const l = letra('bold', t)
+    if (anchoTexto(texto, l) <= ancho) return { texto: textoEnBits([texto], l, { alinear }), letra: l, contenido: texto, completo: true }
+  }
+  return null
+}
+
+/**
+ * La talla y el color; si no caben, solo la talla —es lo que la clienta busca
+ * en la etiqueta—, y si tampoco, recortada.
+ */
+function bloqueDetalle(detalle: string, tamaños: number[], ancho: number, alinear: 'left' | 'center'): Bloque {
+  const entero = renglonQueCabe(detalle, tamaños, ancho, alinear)
+  if (entero) return entero
+  const talla = detalle.split(' / ')[0]!.trim()
+  const soloTalla = renglonQueCabe(talla, tamaños, ancho, alinear)
+  if (soloTalla) return { ...soloTalla, completo: false }
+  const l = letra('bold', tamaños.at(-1)!)
+  const corto = recortar(talla, l, ancho)
+  return { texto: textoEnBits([corto], l, { alinear }), letra: l, contenido: corto, completo: false }
+}
+
+/** El precio en ExtraBold, lo más grande que quepa en `ancho`, sin bajar de `min`. */
+function bloquePrecio(precio: string, max: number, min: number, ancho: number): Bloque {
+  const tamaños = tamañosEntre('extrabold', 0, max)
+  for (const t of tamaños) {
+    const l = letra('extrabold', t)
+    if (t < min) break
+    if (anchoTexto(precio, l) <= ancho) return { texto: textoEnBits([precio], l), letra: l, contenido: precio, completo: true }
+  }
+  const l = letra('extrabold', Math.max(min, tamaños.at(-1)!))
+  return { texto: textoEnBits([precio], l), letra: l, contenido: precio, completo: anchoTexto(precio, l) <= ancho }
+}
+
+function pieza(papel: PapelTexto, b: Bloque, x: number, y: number): PiezaEtiqueta {
+  return { tipo: 'texto', papel, contenido: b.contenido, letra: b.letra.tamaño, x: Math.round(x), y: Math.round(y), imagen: b.texto.imagen }
+}
+
+/** Abajo de la tinta respecto a su línea base. */
+function bajada(b: Bloque): number {
+  return b.texto.imagen.height - b.texto.base
+}
+
+interface Intento extends ComposicionEtiqueta {
+  /** Puntos libres en vertical; negativo si no cupo. */
+  sobra: number
+  completo: boolean
+}
+
+/**
+ * Prueba la composición de mayor a menor: la primera escala en la que todo
+ * cabe entero gana; si ninguna, la primera que cabe aunque recorte; si
+ * tampoco, la más chica.
+ */
+function elegir(k0: number, componer: (k: number) => Intento): ComposicionEtiqueta {
+  let cabe: Intento | null = null
+  let ultimo: Intento | null = null
+  for (let i = 0; i < 12; i++) {
+    ultimo = componer(k0 * 0.92 ** i)
+    if (ultimo.sobra < 0) continue
+    if (ultimo.completo) return { piezas: ultimo.piezas, avisos: ultimo.avisos }
+    cabe ??= ultimo
+  }
+  const elegido = cabe ?? ultimo!
+  return { piezas: elegido.piezas, avisos: elegido.avisos }
+}
+
+export function componerEtiqueta(d: DatosEtiqueta, W: number, H: number): ComposicionEtiqueta {
+  // 1.5 mm de borde como mínimo: la etiqueta física casi nunca cae exacta
+  // bajo el cabezal y lo que roza la orilla sale cortado.
+  const margen = Math.max(12, Math.round(Math.min(W, H) * 0.06))
+  // Las casi cuadradas (58 × 60) también van en columna: apaisadas les queda
+  // un hueco enorme entre el nombre y el precio.
+  const colgante = H > W * 0.9
+  const precio = precioEtiqueta(d.precioCents)
+  const sku = d.sku.trim().toUpperCase()
+  if (colgante) {
+    const k0 = Math.min((W - margen * 2) / 282, (H - margen * 2) / 442)
+    return elegir(k0, (k) => colgada(d, W, H, margen, k, precio, sku))
+  }
+  // Las medidas de referencia son las de 50 × 25 mm (376 × 176 útiles).
+  const k0 = Math.min((H - margen * 2) / 176, ((W - margen * 2) / 376) * 1.2)
+  return elegir(k0, (k) => apaisada(d, W, H, margen, k, precio, sku))
+}
+
+function apaisada(d: DatosEtiqueta, W: number, H: number, m: number, k: number, precio: string, sku: string): Intento {
+  const util = W - m * 2
+  const interior = H - m * 2
+  const avisos: string[] = []
+  const hueco = Math.max(10, Math.round(16 * k))
+  const piezas: PiezaEtiqueta[] = []
+
+  // ---- Abajo: código de pieza a la izquierda, precio a la derecha ----
+  const bSku = bloqueQueCabe(sku, tamañosEntre('bold', 14, 24 * k), util * 0.5, 1)
+  if (!bSku.completo) avisos.push(`El código ${sku} no cabe completo`)
+  const libreParaPrecio = util - bSku.texto.ancho - hueco
+  const bPrecio = bloquePrecio(precio, 64 * k, Math.round(bSku.letra.tamaño * 1.3), libreParaPrecio)
+
+  const base = H - m - Math.max(bajada(bSku), bajada(bPrecio))
+  const ySku = base - bSku.texto.base
+  const yPrecio = base - bPrecio.texto.base
+  piezas.push(pieza('sku', bSku, m, ySku))
+  piezas.push(pieza('precio', bPrecio, W - m - bPrecio.texto.ancho, yPrecio))
+  let techo = Math.min(ySku, yPrecio)
+
+  // ---- Talla y color: encima del código y al lado del precio; si no cabe
+  // ahí, en su propio renglón encima del precio ----
+  const detalle = d.detalle?.trim()
+  if (detalle) {
+    const lado = util - bPrecio.texto.ancho - hueco
+    // Al lado solo si no hay que encogerla mucho: chiquita junto al precio se
+    // pierde, y encima del precio cabe más grande.
+    const alLado = renglonQueCabe(detalle, tamañosEntre('bold', Math.max(14, 18 * k), 22 * k), lado, 'left')
+    const encima = alLado ? null : renglonQueCabe(detalle, tamañosEntre('bold', 14, 22 * k), util, 'left')
+    const bDet = alLado ?? encima ?? bloqueDetalle(detalle, tamañosEntre('bold', 14, 22 * k), lado, 'left')
+    // De la línea base de la talla a la tinta de abajo: lo que baja la «g»
+    // y un respiro.
+    const debajo = encima ? Math.min(ySku, yPrecio) : ySku
+    const baseDet = debajo - Math.max(4, Math.round(bDet.letra.tamaño * 0.3)) - bDet.letra.descendente
+    const yDet = baseDet - bDet.texto.base
+    piezas.push(pieza('detalle', bDet, m, yDet))
+    techo = Math.min(techo, yDet)
+    if (!bDet.completo) avisos.push(`«${detalle}» no cabe completo; va ${bDet.contenido}`)
+  }
+
+  // ---- Arriba: monograma y nombre ----
+  const altoMax = techo - m - Math.max(6, Math.round(10 * k))
+  const logo = monograma(Math.min(altoMax, 56 * k))
+  const separaLogo = logo ? Math.max(8, Math.round(logo.width * 0.22)) : 0
+  const xNombre = m + (logo ? logo.width + separaLogo : 0)
+  const renglones = interior >= 260 ? 3 : 2
+  const bNombre = bloqueQueCabe(d.nombre, tamañosEntre('bold', 14, 30 * k), W - m - xNombre, renglones)
+  if (!bNombre.completo) avisos.push(`El nombre «${d.nombre}» no cabe completo`)
+
+  const altoNombre = bNombre.texto.imagen.height
+  const altoCabecera = Math.max(altoNombre, logo?.height ?? 0)
+  piezas.push(pieza('nombre', bNombre, xNombre, m + Math.floor((altoCabecera - altoNombre) / 2)))
+  if (logo) piezas.push({ tipo: 'logo', x: m, y: m + Math.floor((altoCabecera - logo.height) / 2), imagen: logo })
+
+  const sobra = techo - (m + altoCabecera) - Math.max(6, Math.round(10 * k))
+  // Con aire de sobra, una línea fina separa la prenda de lo que cuesta.
+  if (sobra >= 10) {
+    const y = Math.round(m + altoCabecera + (techo - m - altoCabecera) / 2) - 1
+    piezas.push({ tipo: 'linea', x: m, y, ancho: util, alto: 2 })
+  }
+
+  return {
+    piezas,
+    avisos,
+    sobra,
+    completo: bNombre.completo && bSku.completo && bPrecio.completo && avisos.length === 0,
+  }
+}
+
+function colgada(d: DatosEtiqueta, W: number, H: number, m: number, k: number, precio: string, sku: string): Intento {
+  const util = W - m * 2
+  const interior = H - m * 2
+  const avisos: string[] = []
+  const separa = Math.max(8, Math.round(14 * k))
+
+  const logo = monograma(64 * k)
+  const bNombre = bloqueQueCabe(d.nombre, tamañosEntre('bold', 14, 32 * k), util, 3, 'center')
+  if (!bNombre.completo) avisos.push(`El nombre «${d.nombre}» no cabe completo`)
+  const bDet = d.detalle?.trim() ? bloqueDetalle(d.detalle.trim(), tamañosEntre('bold', 14, 24 * k), util, 'center') : null
+  if (bDet && !bDet.completo) avisos.push(`«${d.detalle}» no cabe completo; va ${bDet.contenido}`)
+  const bSku = bloqueQueCabe(sku, tamañosEntre('bold', 14, 26 * k), util, 1, 'center')
+  if (!bSku.completo) avisos.push(`El código ${sku} no cabe completo`)
+  const bPrecio = bloquePrecio(precio, 72 * k, Math.round(bSku.letra.tamaño * 1.3), util)
+
+  // De arriba abajo, con un hueco entre cada pieza; la línea va entre la
+  // talla y el precio.
+  const pila: ({ alto: number; poner: (y: number) => PiezaEtiqueta } | 'linea')[] = []
+  if (logo) pila.push({ alto: logo.height, poner: (y) => ({ tipo: 'logo', x: Math.round((W - logo.width) / 2), y, imagen: logo }) })
+  const centrado = (papel: PapelTexto, b: Bloque) => ({
+    alto: b.texto.imagen.height,
+    poner: (y: number) => pieza(papel, b, (W - b.texto.ancho) / 2, y),
+  })
+  pila.push(centrado('nombre', bNombre))
+  if (bDet) pila.push(centrado('detalle', bDet))
+  pila.push('linea')
+  pila.push(centrado('precio', bPrecio))
+  pila.push(centrado('sku', bSku))
+
+  const altoLinea = 2
+  const ocupado = pila.reduce((s, p) => s + (p === 'linea' ? altoLinea : p.alto), 0)
+  const huecos = pila.length - 1
+  const sobra = interior - ocupado - huecos * separa
+  // El aire de más se reparte entre los huecos (hasta el doble) y lo que
+  // quede, arriba y abajo para centrar la columna.
+  const extra = Math.max(0, Math.min(separa, Math.floor(sobra / huecos)))
+  const paso = separa + extra
+  let y = m + Math.max(0, Math.floor((sobra - extra * huecos) / 2))
+
+  const piezas: PiezaEtiqueta[] = []
+  for (const p of pila) {
+    if (p === 'linea') {
+      const ancho = Math.round(util * 0.4)
+      piezas.push({ tipo: 'linea', x: Math.round((W - ancho) / 2), y, ancho, alto: altoLinea })
+      y += altoLinea + paso
+    } else {
+      piezas.push(p.poner(y))
+      y += p.alto + paso
+    }
+  }
+
+  return {
+    piezas,
+    avisos,
+    sobra,
+    completo: bNombre.completo && bSku.completo && bPrecio.completo && avisos.length === 0,
+  }
 }
 
 /**
  * Dibuja UNA etiqueta en el lienzo (sin `CLS` ni `PRINT`). Devuelve avisos
- * cuando algo no cupo: un código de barras de módulo 1 o más ancho que la
- * etiqueta no se lee bien y la pantalla debe decirlo.
+ * cuando algo no cupo entero, para enseñarlos en pantalla.
  */
 export function dibujarEtiqueta(t: TsplBuilder, d: DatosEtiqueta): string[] {
-  const W = t.anchoPuntos
-  const H = t.altoPuntos
-  const avisos: string[] = []
-  // 1.5 mm de borde como mínimo: la etiqueta física casi nunca cae exacta
-  // bajo el cabezal y lo que roza la orilla sale cortado.
-  const margen = Math.max(12, Math.round(Math.min(W, H) * 0.06))
-  const util = W - margen * 2
-  const colgante = H > W * 1.15
-
-  // El código puede acercarse más al borde que el texto: con 1 mm de margen
-  // blanco a cada lado los lectores lo leen, y ese milímetro decide si la
-  // barra sale de 2 puntos (bien) o de 1 (al límite) en etiquetas de 40 mm.
-  const anchoCodigo = W - PUNTOS_POR_MM * 2
-  const codigo = codigoPara(d, anchoCodigo)
-  if (codigo.ancho > anchoCodigo) avisos.push(`El código ${codigo.valor} no cabe completo en ${W / PUNTOS_POR_MM} mm`)
-  else if (codigo.modulo === 1) avisos.push(`El código ${codigo.valor} sale muy fino; una etiqueta más ancha se lee mejor`)
-
-  const precio = precioEtiqueta(d.precioCents)
-  const sku = d.sku.toUpperCase()
-
-  if (colgante) {
-    colgada(t, d, { W, H, margen, util, codigo, precio, sku })
-  } else {
-    apaisada(t, d, { W, H, margen, util, codigo, precio, sku })
+  const { piezas, avisos } = componerEtiqueta(d, t.anchoPuntos, t.altoPuntos)
+  for (const p of piezas) {
+    if (p.tipo === 'linea') t.barra(p.x, p.y, p.ancho, p.alto)
+    else t.imagen(p.x, p.y, p.imagen)
   }
   return avisos
-}
-
-interface Medidas {
-  W: number
-  H: number
-  margen: number
-  util: number
-  codigo: Codigo
-  precio: string
-  sku: string
-}
-
-function apaisada(t: TsplBuilder, d: DatosEtiqueta, m: Medidas): void {
-  const { W, H, margen, util, codigo, precio, sku } = m
-  const interior = H - margen * 2
-
-  // Cada bloque tiene un tope de alto y lo que sobra se reparte de aire
-  // entre ellos: con los bloques estirados al alto disponible, en 50 × 25 el
-  // precio, el código y el nombre se pegaban y la etiqueta salía saturada.
-  // En 25 mm de alto: cabecera de 5.5 mm, precio de 3 mm, barras de 5 mm.
-  const altoCabecera = Math.round(interior * 0.26)
-  const fuenteSku: FuenteTspl = interior >= 240 ? '2' : '1'
-  const altoSku = FUENTES_TSPL[fuenteSku].alto
-  const altoBarras = Math.max(24, Math.min(72, Math.round(interior * 0.24)))
-
-  const fPrecio =
-    fuenteQueCabe(precio, Math.round(util * 0.55), Math.round(interior * 0.16), { max: '4', min: '2' }) ??
-    ({ fuente: '2', escala: 1 } as const)
-  const mPrecio = medirTexto(precio, fPrecio.fuente, fPrecio.escala)
-  const altoPrecio = mPrecio.alto
-
-  const ocupado = altoCabecera + altoPrecio + altoBarras + 2 + altoSku
-  const aire = Math.max(3, Math.floor((interior - ocupado) / 2))
-
-  // ---- Cabecera: monograma a la izquierda, nombre a su lado ----
-  let y = margen
-  const logo = monograma(altoCabecera)
-  let xNombre = margen
-  if (logo) {
-    t.imagen(margen, y + Math.floor((altoCabecera - logo.height) / 2), logo)
-    xNombre = margen + logo.width + Math.max(6, Math.round(logo.width * 0.25))
-  }
-  const anchoNombre = W - margen - xNombre
-  escribirNombre(t, d.nombre, xNombre, y, anchoNombre, altoCabecera, 'left', '3')
-  y += altoCabecera + aire
-
-  // ---- Talla/color a la izquierda, precio a la derecha ----
-  t.texto(W - margen - mPrecio.ancho, y, precio, fPrecio.fuente, fPrecio.escala)
-
-  if (d.detalle) {
-    const libre = util - mPrecio.ancho - 8
-    // Si «Extra grande / Azul marino» no cabe ni en la fuente más chica, se
-    // queda la talla sola —es lo que la clienta busca en la etiqueta— y solo
-    // si tampoco cabe, se recorta.
-    const talla = d.detalle.split(' / ')[0]!
-    const columnas = Math.floor(libre / FUENTES_TSPL['1'].ancho)
-    const opciones = [d.detalle, talla, talla.slice(0, columnas)]
-    for (const texto of opciones) {
-      // Un punto más chica que el precio, que es lo que se lee primero.
-      const f = fuenteQueCabe(texto, libre, altoPrecio, { max: '2', min: '1' })
-      if (!f || texto.trim() === '') continue
-      const md = medirTexto(texto, f.fuente, f.escala)
-      t.texto(margen, y + Math.max(0, altoPrecio - md.alto), texto, f.fuente, f.escala)
-      break
-    }
-  }
-  y += altoPrecio + aire
-
-  // ---- Código de barras y SKU, centrados ----
-  t.codigoBarras(Math.max(PUNTOS_POR_MM, Math.round((W - codigo.ancho) / 2)), y, codigo.tipo, altoBarras, codigo.modulo, codigo.valor)
-  const mSku = medirTexto(sku, fuenteSku)
-  t.texto(Math.max(margen, Math.round((W - mSku.ancho) / 2)), y + altoBarras + 2, sku, fuenteSku)
-}
-
-function colgada(t: TsplBuilder, d: DatosEtiqueta, m: Medidas): void {
-  const { W, H, margen, util, codigo, precio, sku } = m
-  const interior = H - margen * 2
-  const separa = Math.max(4, Math.round(interior * 0.025))
-  const fuenteSku: FuenteTspl = W >= 360 ? '2' : '1'
-  const altoSku = FUENTES_TSPL[fuenteSku].alto
-
-  let y = margen
-  const logo = monograma(Math.round(interior * 0.16))
-  if (logo) {
-    t.imagen(Math.round((W - logo.width) / 2), y, logo)
-    y += logo.height + separa * 2
-  }
-
-  const altoNombre = Math.round(interior * 0.2)
-  y += escribirNombre(t, d.nombre, margen, y, util, altoNombre, 'center') + separa
-
-  if (d.detalle) {
-    const f = fuenteQueCabe(d.detalle, util, Math.round(interior * 0.08), { max: '3', min: '1' })
-    if (f) {
-      const md = medirTexto(d.detalle, f.fuente, f.escala)
-      t.texto(Math.round((W - md.ancho) / 2), y, d.detalle, f.fuente, f.escala)
-      y += md.alto + separa
-    }
-  }
-
-  const fPrecio =
-    fuenteQueCabe(precio, util, Math.round(interior * 0.14), { max: '5', min: '2', escalas: [2, 1] }) ??
-    ({ fuente: '2', escala: 1 } as const)
-  const mPrecio = medirTexto(precio, fPrecio.fuente, fPrecio.escala)
-  t.texto(Math.round((W - mPrecio.ancho) / 2), y, precio, fPrecio.fuente, fPrecio.escala)
-  y += mPrecio.alto + separa * 2
-
-  // Una línea fina separa la parte de la clienta (arriba) de la del sistema.
-  t.barra(margen * 2, y, W - margen * 4, 2)
-  y += separa * 2
-
-  const altoBarras = Math.max(32, Math.min(Math.round(interior * 0.22), H - margen - y - altoSku - 2))
-  t.codigoBarras(Math.max(PUNTOS_POR_MM, Math.round((W - codigo.ancho) / 2)), y, codigo.tipo, altoBarras, codigo.modulo, codigo.valor)
-  const mSku = medirTexto(sku, fuenteSku)
-  t.texto(Math.max(margen, Math.round((W - mSku.ancho) / 2)), y + altoBarras + 2, sku, fuenteSku)
-}
-
-/**
- * El nombre de la prenda en hasta tres renglones (dos en etiquetas bajas),
- * con la fuente más grande que lo deje entero o casi. Devuelve el alto usado.
- */
-function escribirNombre(
-  t: TsplBuilder,
-  nombre: string,
-  x: number,
-  y: number,
-  ancho: number,
-  alto: number,
-  alinear: 'left' | 'center',
-  max: FuenteTspl = '4',
-): number {
-  const candidatas = (['4', '3', '2', '1'] as FuenteTspl[]).filter((f) => Number(f) <= Number(max))
-  let elegido: { fuente: FuenteTspl; lineas: string[] } | null = null
-  for (const fuente of candidatas) {
-    const f = FUENTES_TSPL[fuente]
-    const maximo = Math.min(3, Math.floor(alto / (f.alto + 2)))
-    if (maximo < 1) continue
-    const columnas = Math.floor(ancho / f.ancho)
-    if (columnas < 4) continue
-    const lineas = renglones(nombre, columnas, maximo)
-    const cabeEntero = renglones(nombre, columnas, 99).length <= maximo
-    // Se queda con la primera (la más grande) que lo deja entero; si ninguna
-    // lo logra, con la más chica, que es la que recorta menos.
-    elegido = { fuente, lineas }
-    if (cabeEntero) break
-  }
-  if (!elegido) return 0
-
-  const f = FUENTES_TSPL[elegido.fuente]
-  const total = elegido.lineas.length * (f.alto + 2)
-  // En la cabecera apaisada el nombre se centra en vertical junto al monograma.
-  let yy = alinear === 'left' ? y + Math.max(0, Math.floor((alto - total) / 2)) : y
-  for (const l of elegido.lineas) {
-    const ml = medirTexto(l, elegido.fuente)
-    const xx = alinear === 'center' ? x + Math.max(0, Math.round((ancho - ml.ancho) / 2)) : x
-    t.texto(xx, yy, l, elegido.fuente)
-    yy += f.alto + 2
-  }
-  return total
 }
 
 // ---------------------------------------------------------------------------
@@ -376,6 +396,15 @@ export function buildEtiquetas(
   return { bytes: t.build(), avisos: [...new Set(avisos)] }
 }
 
+/** La prenda de muestra de la etiqueta de prueba y de la vista previa de Impresora. */
+export const PRENDA_DE_MUESTRA: DatosEtiqueta = {
+  nombre: 'Vestido Midi Satinado',
+  detalle: 'Mediana / Negro',
+  precioCents: 189000,
+  sku: '1001-M-NEG',
+  copias: 1,
+}
+
 /**
  * La etiqueta de prueba: un recuadro al borde del área imprimible y una
  * etiqueta de ejemplo encima. Si el recuadro sale cortado o corrido, hay que
@@ -388,13 +417,6 @@ export function buildEtiquetaPrueba(
 ): Uint8Array {
   const t = new TsplBuilder(configuracion(formato, ajustes)).configurar().limpiar()
   t.caja(2, 2, t.anchoPuntos - 3, t.altoPuntos - 3, 2)
-  dibujarEtiqueta(t, {
-    nombre: 'Vestido Midi Satinado',
-    detalle: 'Mediana / Negro',
-    precioCents: 189000,
-    sku: '1001-M-NEG',
-    codigoBarras: null,
-    copias: 1,
-  })
+  dibujarEtiqueta(t, PRENDA_DE_MUESTRA)
   return t.imprimir(1).build()
 }

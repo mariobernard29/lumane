@@ -245,7 +245,6 @@ function deHit(h: VariantHit): ItemEtiqueta {
     nombre: h.product_name,
     detalle: h.variant_title === 'Única' ? '' : h.variant_title,
     sku: h.sku,
-    barcode: h.barcode,
     precioCents: h.price_cents,
     copias: 1,
   }

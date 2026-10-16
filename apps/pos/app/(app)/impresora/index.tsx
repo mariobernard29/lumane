@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
-import { FORMATOS_ETIQUETA, MEDIDA_MAXIMA_MM, MEDIDA_MINIMA_MM } from '@lumane/core'
+import { FORMATOS_ETIQUETA, MEDIDA_MAXIMA_MM, MEDIDA_MINIMA_MM, PRENDA_DE_MUESTRA } from '@lumane/core'
 import { errorMessage } from '@lumane/db'
 
 import type { DispositivoBt } from '../../../modules/impresora-bt'
@@ -451,14 +451,7 @@ function AjustesEtiquetas() {
         <View style={k.vista} onLayout={(ev) => setAnchoVista(Math.min(360, ev.nativeEvent.layout.width))}>
           <Text style={[s.label, k.nota]}>Así sale · {nombreFormato(e)}</Text>
           <VistaEtiqueta
-            datos={{
-              nombre: 'Vestido Midi Satinado',
-              detalle: 'Mediana / Negro',
-              precioCents: 189000,
-              sku: '1001-M-NEG',
-              codigoBarras: null,
-              copias: 1,
-            }}
+            datos={PRENDA_DE_MUESTRA}
             formato={formato}
             ajustes={ajustes}
             ancho={anchoVista}
@@ -470,7 +463,7 @@ function AjustesEtiquetas() {
         <Text style={s.label}>Ajuste fino</Text>
         <Paso
           etiqueta="Oscuridad"
-          detalle="Súbela si el código de barras sale gris o no se lee."
+          detalle="Súbela si las letras salen grises o con huecos."
           valor={String(e.densidad)}
           onMenos={() => void guardarEtiquetadora({ densidad: Math.max(0, e.densidad - 1) })}
           onMas={() => void guardarEtiquetadora({ densidad: Math.min(15, e.densidad + 1) })}

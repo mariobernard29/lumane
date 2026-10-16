@@ -334,3 +334,42 @@ export function leerEtiqueta(bytes: Uint8Array): EtiquetaLeída {
   }
   return salida
 }
+
+/**
+ * Los elementos de una etiqueta leída pintados en una imagen del tamaño de
+ * la etiqueta: la vista previa de la pantalla. Las imágenes sobrescriben lo
+ * que tapan, como `BITMAP` en modo 0. Los `TEXT` y `BARCODE` no se pintan: la
+ * plantilla de prendas ya no los usa.
+ */
+export function rasterizarEtiqueta(anchoPuntos: number, altoPuntos: number, elementos: ElementoEtiqueta[]): RasterImage {
+  const bytesPorFila = Math.ceil(anchoPuntos / 8)
+  const data = new Uint8Array(bytesPorFila * altoPuntos)
+  const punto = (x: number, y: number, tinta: boolean) => {
+    if (x < 0 || y < 0 || x >= anchoPuntos || y >= altoPuntos) return
+    const i = y * bytesPorFila + (x >> 3)
+    const bit = 0x80 >> (x & 7)
+    data[i] = tinta ? data[i]! | bit : data[i]! & ~bit
+  }
+  const rect = (x: number, y: number, w: number, h: number) => {
+    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) punto(xx, yy, true)
+  }
+  for (const e of elementos) {
+    if (e.tipo === 'imagen') {
+      const bpf = Math.ceil(e.imagen.width / 8)
+      for (let yy = 0; yy < e.imagen.height; yy++) {
+        for (let xx = 0; xx < e.imagen.width; xx++) {
+          const b = e.imagen.data[yy * bpf + (xx >> 3)] ?? 0
+          punto(e.x + xx, e.y + yy, (b & (0x80 >> (xx & 7))) !== 0)
+        }
+      }
+    } else if (e.tipo === 'barra') {
+      rect(e.x, e.y, e.ancho, e.alto)
+    } else if (e.tipo === 'caja') {
+      rect(e.x, e.y, e.ancho, 2)
+      rect(e.x, e.y + e.alto - 2, e.ancho, 2)
+      rect(e.x, e.y, 2, e.alto)
+      rect(e.x + e.ancho - 2, e.y, 2, e.alto)
+    }
+  }
+  return { width: bytesPorFila * 8, height: altoPuntos, data }
+}

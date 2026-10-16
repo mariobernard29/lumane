@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
-import { Image, StyleSheet, Text, View } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 import {
   buildEtiquetas,
   leerEtiqueta,
+  pngDataUri,
+  rasterizarEtiqueta,
   type AjustesEtiqueta,
   type DatosEtiqueta,
   type FormatoEtiqueta,
@@ -11,14 +13,11 @@ import {
 import { color } from '@/theme'
 
 /**
- * Cómo va a salir la etiqueta, dibujada con los MISMOS bytes que se mandan a
- * la etiquetadora: se construye el TSPL y se lee de vuelta a cajas. Si la
- * vista y el papel no coinciden, el fallo está en la impresora (medida,
- * desplazamiento), no en la plantilla.
- *
- * Los textos usan la monoespaciada de Android con el ancho de las fuentes de
- * la impresora; el código de barras se pinta como franjas, no como un código
- * real: es una vista, no algo que haya que escanear.
+ * Cómo va a salir la etiqueta, punto por punto: se construye el TSPL que se
+ * manda a la etiquetadora, se lee de vuelta y se pinta en una imagen de 1 bit
+ * del tamaño de la etiqueta. Como los textos también viajan como imagen, lo
+ * que se ve aquí es exactamente lo que sale; si el papel no coincide, el
+ * fallo está en la impresora (medida, desplazamiento), no en la plantilla.
  */
 export function VistaEtiqueta({
   datos,
@@ -32,86 +31,20 @@ export function VistaEtiqueta({
   /** Ancho en pantalla, en dp. */
   ancho: number
 }) {
-  const leída = useMemo(
-    () => leerEtiqueta(buildEtiquetas([{ ...datos, copias: 1 }], formato, ajustes).bytes),
-    [datos, formato, ajustes],
-  )
-  const k = ancho / leída.anchoPuntos
-  const elementos = leída.etiquetas[0]?.elementos ?? []
+  const { uri, anchoPuntos, altoPuntos } = useMemo(() => {
+    const leída = leerEtiqueta(buildEtiquetas([{ ...datos, copias: 1 }], formato, ajustes).bytes)
+    const imagen = rasterizarEtiqueta(leída.anchoPuntos, leída.altoPuntos, leída.etiquetas[0]?.elementos ?? [])
+    return { uri: pngDataUri(imagen), anchoPuntos: imagen.width, altoPuntos: leída.altoPuntos }
+  }, [datos, formato, ajustes])
+  const k = ancho / Math.max(1, anchoPuntos)
 
   return (
     <View
-      style={[v.etiqueta, { width: ancho, height: leída.altoPuntos * k }]}
+      style={[v.etiqueta, { width: ancho, height: altoPuntos * k }]}
       accessibilityRole="image"
       accessibilityLabel={`Vista previa de la etiqueta de ${datos.nombre}`}
     >
-      {elementos.map((e, i) => {
-        const caja = {
-          left: e.x * k,
-          top: e.y * k,
-          width: e.ancho * k,
-          height: e.alto * k,
-        }
-        switch (e.tipo) {
-          case 'texto':
-            return (
-              <Text
-                key={i}
-                numberOfLines={1}
-                style={[
-                  v.texto,
-                  caja,
-                  // Monoespaciada: cada carácter mide ~0.6 de su tamaño, igual
-                  // que las fuentes de la impresora miden su ancho en puntos.
-                  {
-                    fontSize: (e.ancho / Math.max(1, [...e.contenido].length) / 0.6) * k,
-                    lineHeight: e.alto * k,
-                  },
-                ]}
-              >
-                {e.contenido}
-              </Text>
-            )
-          case 'imagen':
-            return (
-              <Image
-                key={i}
-                source={require('../../../assets/monograma-etiqueta.png')}
-                style={[v.abs, caja]}
-                resizeMode="contain"
-              />
-            )
-          case 'codigo':
-            return <Franjas key={i} caja={caja} modulo={e.modulo * k} />
-          case 'barra':
-            return <View key={i} style={[v.abs, caja, v.negro]} />
-          case 'caja':
-            return <View key={i} style={[v.abs, caja, v.borde]} />
-        }
-      })}
-    </View>
-  )
-}
-
-function Franjas({
-  caja,
-  modulo,
-}: {
-  caja: { left: number; top: number; width: number; height: number }
-  modulo: number
-}) {
-  const barras: { x: number; w: number }[] = []
-  // Un patrón fijo de anchos 1-2-3: parece un código y no engaña a nadie.
-  for (let x = 0, n = 0; x < caja.width; n++) {
-    const w = Math.max(1, ((n * 7) % 3) + 1) * modulo
-    if (n % 2 === 0) barras.push({ x, w })
-    x += w
-  }
-  return (
-    <View style={[v.abs, caja]}>
-      {barras.map((b, i) => (
-        <View key={i} style={[v.abs, v.negro, { left: b.x, top: 0, width: b.w, height: caja.height }]} />
-      ))}
+      <Image source={{ uri }} style={{ width: ancho, height: altoPuntos * k }} resizeMode="stretch" />
     </View>
   )
 }
@@ -124,13 +57,4 @@ const v = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
-  abs: { position: 'absolute' },
-  texto: {
-    position: 'absolute',
-    fontFamily: 'monospace',
-    color: color.primary,
-    includeFontPadding: false,
-  },
-  negro: { backgroundColor: color.primary },
-  borde: { borderWidth: 1, borderColor: color.primary },
 })

@@ -28,7 +28,6 @@ export interface ItemEtiqueta {
   /** «Mediana / Negro»; vacío en prendas sin variantes. */
   detalle: string
   sku: string
-  barcode: string | null
   precioCents: number
   copias: number
 }
@@ -82,7 +81,7 @@ export async function etiquetasDePrenda(productId: string): Promise<ItemEtiqueta
   const { data, error } = await supabase
     .from('products')
     .select(
-      'name, product_variants(id, title, sku, barcode, price_cents, is_active, position, inventory_levels(available))',
+      'name, product_variants(id, title, sku, price_cents, is_active, position, inventory_levels(available))',
     )
     .eq('id', productId)
     .maybeSingle()
@@ -102,7 +101,6 @@ export async function etiquetasDePrenda(productId: string): Promise<ItemEtiqueta
         nombre: data.name,
         detalle: v.title ?? '',
         sku: v.sku,
-        barcode: v.barcode,
         precioCents: Number(v.price_cents),
         copias: Math.max(1, piezas),
       }
@@ -140,24 +138,24 @@ export function aDatos(items: ItemEtiqueta[]): DatosEtiqueta[] {
     detalle: i.detalle.trim() || null,
     precioCents: i.precioCents,
     sku: i.sku,
-    codigoBarras: i.barcode,
     copias: i.copias,
   }))
 }
 
 /**
- * Imprime la lista. Devuelve los avisos de la plantilla (un código que no
- * cabe, uno que sale muy fino) para enseñarlos, no para frenar la impresión.
+ * Imprime la lista. Devuelve los avisos de la plantilla (un nombre o una talla
+ * que no cupo entera) para enseñarlos, no para frenar la impresión.
  *
- * Se manda por tandas de 25 prendas: un trabajo de 300 etiquetas en un solo
- * envío tarda en cruzar el Bluetooth más de lo que espera el módulo nativo, y
- * si se corta a la mitad no se sabe cuáles salieron.
+ * Se manda por tandas de 10 prendas: los textos viajan como imagen (~3 KB por
+ * prenda distinta; las copias no se vuelven a mandar), un trabajo de 300
+ * etiquetas en un solo envío tarda en cruzar el Bluetooth más de lo que espera
+ * el módulo nativo, y si se corta a la mitad no se sabe cuáles salieron.
  */
 export async function imprimirEtiquetas(items: ItemEtiqueta[]): Promise<string[]> {
   const e = preferencias().etiquetadora
   const avisos = new Set<string>()
-  for (let i = 0; i < items.length; i += 25) {
-    const tanda = buildEtiquetas(aDatos(items.slice(i, i + 25)), formatoDe(e), ajustesDe(e))
+  for (let i = 0; i < items.length; i += 10) {
+    const tanda = buildEtiquetas(aDatos(items.slice(i, i + 10)), formatoDe(e), ajustesDe(e))
     for (const a of tanda.avisos) avisos.add(a)
     await imprimir(tanda.bytes, 1, 'etiquetas')
   }

@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { PermissionsAndroid, Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+// Base64 a mano: los bytes cruzan el puente como texto, y así no se depende de `btoa`.
+import { aBase64 } from '@lumane/core'
 
 import { ImpresoraBt, type DispositivoBt } from '../../../modules/impresora-bt'
 
@@ -292,25 +294,4 @@ export function imprimir(bytes: Uint8Array, copias = 1, rol: Rol = 'tickets'): P
 
 export async function desconectar(): Promise<void> {
   await ImpresoraBt?.desconectar()
-}
-
-const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-
-/** Base64 a mano: los bytes cruzan el puente como texto, y así no se depende de `btoa`. */
-function aBase64(bytes: Uint8Array): string {
-  let salida = ''
-  let i = 0
-  for (; i + 2 < bytes.length; i += 3) {
-    const n = (bytes[i]! << 16) | (bytes[i + 1]! << 8) | bytes[i + 2]!
-    salida += ALFABETO[n >> 18]! + ALFABETO[(n >> 12) & 63]! + ALFABETO[(n >> 6) & 63]! + ALFABETO[n & 63]!
-  }
-  const resto = bytes.length - i
-  if (resto === 1) {
-    const n = bytes[i]! << 16
-    salida += ALFABETO[n >> 18]! + ALFABETO[(n >> 12) & 63]! + '=='
-  } else if (resto === 2) {
-    const n = (bytes[i]! << 16) | (bytes[i + 1]! << 8)
-    salida += ALFABETO[n >> 18]! + ALFABETO[(n >> 12) & 63]! + ALFABETO[(n >> 6) & 63]! + '='
-  }
-  return salida
 }
