@@ -23,6 +23,8 @@ import { createServerSupabase } from '../supabase/server.ts'
 export interface StaffProfile {
   id: string
   full_name: string
+  /** Administra al personal (0076). Hoy solo la cuenta de Lumane. */
+  is_superuser?: boolean
   role: { key: 'owner' | 'manager' | 'cashier'; name: string }
   permissions: string[]
   location: { id: string; code: string; name: string }
@@ -39,8 +41,15 @@ export const getStaffProfile = cache(async (): Promise<StaffProfile | null> => {
   return (data as unknown as StaffProfile | null) ?? null
 })
 
-/** El comodín `*` de la propietaria concede todo, igual que en el POS. */
+/**
+ * El comodín `*` de la propietaria concede todo, igual que en el POS.
+ *
+ * `superuser` no es un permiso de rol sino la marca de la 0076: ni siquiera el
+ * comodín lo concede, para que una socia con rol de Propietaria no pueda
+ * quitarle el acceso a la dueña.
+ */
 export function puede(staff: StaffProfile | null, permiso: string): boolean {
   if (!staff) return false
+  if (permiso === 'superuser') return staff.is_superuser === true
   return staff.permissions.includes('*') || staff.permissions.includes(permiso)
 }

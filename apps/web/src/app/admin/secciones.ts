@@ -62,6 +62,13 @@ export const SECCIONES: Seccion[] = [
     descripcion: 'Prendas, variantes, precios y fotografía.',
   },
   {
+    href: '/admin/personal',
+    label: 'Personal',
+    // No es un permiso de rol: es la marca de superusuaria (0076). Ver `puede`.
+    permiso: 'superuser',
+    descripcion: 'Quién entra al panel y a la tablet: altas, bajas, roles y contraseñas.',
+  },
+  {
     href: '/admin/reportes',
     label: 'Reportes',
     // El único que no es `cms.write` ni `inventory.write`: `reports.read` lo

@@ -2160,6 +2160,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          is_superuser: boolean
           location_id: string | null
           pin_hash: string | null
           role_id: string
@@ -2171,6 +2172,7 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          is_superuser?: boolean
           location_id?: string | null
           pin_hash?: string | null
           role_id: string
@@ -2182,6 +2184,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          is_superuser?: boolean
           location_id?: string | null
           pin_hash?: string | null
           role_id?: string
@@ -2971,6 +2974,20 @@ export type Database = {
         Returns: Json
       }
       list_register_sessions: { Args: { p_limit?: number }; Returns: Json }
+      list_staff: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          is_superuser: boolean
+          last_sign_in: string
+          role_key: string
+          role_name: string
+        }[]
+      }
       list_staff_orders: {
         Args: {
           p_before?: string
@@ -3095,6 +3112,15 @@ export type Database = {
       }
       set_cart_line_quantity: {
         Args: { p_quantity: number; p_token: string; p_variant_id: string }
+        Returns: Json
+      }
+      update_staff: {
+        Args: {
+          p_full_name?: string
+          p_id: string
+          p_is_active?: boolean
+          p_role?: string
+        }
         Returns: Json
       }
       update_my_profile: {
