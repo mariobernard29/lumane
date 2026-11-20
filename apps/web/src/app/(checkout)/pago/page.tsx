@@ -9,7 +9,7 @@ import { getCart } from '@/lib/queries/cart'
 import { getCurrentCustomer } from '@/lib/queries/customer'
 import { getStoreChrome } from '@/lib/queries/layout'
 import { getDefaultLocation, getShippingMethods } from '@/lib/queries/shipping'
-import { isStripeConfigured } from '@/lib/stripe/server'
+import { getStripePublishableKey } from '@/lib/stripe/server'
 
 export const metadata: Metadata = {
   title: 'Pago',
@@ -110,7 +110,7 @@ export default async function CheckoutPage() {
               : null
           }
           freeShippingOverCents={chrome.settings.freeShippingOverCents}
-          stripeEnabled={isStripeConfigured()}
+          stripePublishableKey={getStripePublishableKey()}
           customer={
             customer
               ? { email: customer.email ?? '', firstName: customer.firstName, lastName: customer.lastName }

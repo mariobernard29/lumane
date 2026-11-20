@@ -22,10 +22,18 @@ import type { PlaceOrderInput } from '@/actions/checkout'
  * Stripe.
  */
 
-// `loadStripe` fuera del componente: se carga una vez, no en cada render.
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
+// La llave llega del servidor (`STRIPE_PUBLISHABLE_KEY`), pero `loadStripe` se
+// sigue llamando una sola vez por llave y no en cada render: se guarda aquí.
+let stripePromise: ReturnType<typeof loadStripe> | null = null
+let stripePromiseKey: string | null = null
+
+function getStripePromise(publishableKey: string) {
+  if (!stripePromise || stripePromiseKey !== publishableKey) {
+    stripePromise = loadStripe(publishableKey)
+    stripePromiseKey = publishableKey
+  }
+  return stripePromise
+}
 
 /**
  * Los tokens de Lumane aplicados al formulario de Stripe: esquina viva,
@@ -83,6 +91,8 @@ const appearance: Appearance = {
 }
 
 export interface CardPaymentSectionProps {
+  /** Llave publicable de Stripe (`pk_...`), o null si no está configurada. */
+  publishableKey: string | null
   amountCents: number
   /** Los datos del formulario en el momento de pagar. */
   getOrderInput: () => PlaceOrderInput
@@ -92,7 +102,7 @@ export interface CardPaymentSectionProps {
 }
 
 export function CardPaymentSection(props: CardPaymentSectionProps) {
-  if (!stripePromise) {
+  if (!props.publishableKey) {
     return (
       <p className="font-body-md text-body-md text-accent-red">
         El pago con tarjeta no está disponible por ahora. Elige transferencia bancaria.
@@ -115,7 +125,7 @@ export function CardPaymentSection(props: CardPaymentSectionProps) {
   }
 
   return (
-    <Elements stripe={stripePromise} options={options}>
+    <Elements stripe={getStripePromise(props.publishableKey)} options={options}>
       <CardForm {...props} />
     </Elements>
   )

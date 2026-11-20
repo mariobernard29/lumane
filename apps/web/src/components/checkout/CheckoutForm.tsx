@@ -36,8 +36,8 @@ interface CheckoutFormProps {
   boutique: { lat: number; lng: number } | null
   /** Umbral de envío gratis, solo para las etiquetas de precio. */
   freeShippingOverCents: number | null
-  /** Solo se ofrece tarjeta si Stripe está configurado en el servidor. */
-  stripeEnabled: boolean
+  /** Llave publicable de Stripe, leída en el servidor; null = solo transferencia. */
+  stripePublishableKey: string | null
   customer: { email: string; firstName: string; lastName: string | null } | null
 }
 
@@ -71,8 +71,9 @@ export function CheckoutForm({
   boutique,
   freeShippingOverCents,
   customer,
-  stripeEnabled,
+  stripePublishableKey,
 }: CheckoutFormProps) {
+  const stripeEnabled = stripePublishableKey !== null
   const [email, setEmail] = useState(customer?.email ?? '')
   const [firstName, setFirstName] = useState(customer?.firstName ?? '')
   const [lastName, setLastName] = useState(customer?.lastName ?? '')
@@ -638,6 +639,7 @@ export function CheckoutForm({
           {paymentMethod === 'stripe' ? (
             <div className="mt-6">
               <CardPaymentSection
+                publishableKey={stripePublishableKey}
                 amountCents={totals.totalCents}
                 getOrderInput={buildOrderInput}
                 validate={validateForCard}

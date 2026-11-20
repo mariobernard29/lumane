@@ -14,7 +14,18 @@ import Stripe from 'stripe'
 let client: Stripe | null = null
 
 export function isStripeConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY)
+}
+
+/**
+ * La llave publicable (`pk_...`). No lleva el prefijo `NEXT_PUBLIC_`, así que
+ * Next no la incrusta en el JavaScript del navegador: se lee aquí, en cada
+ * petición, y la página de pago se la pasa al formulario de tarjeta como prop.
+ * Es pública por diseño, así que mandarla al cliente es seguro; la secreta
+ * nunca sale del servidor.
+ */
+export function getStripePublishableKey(): string | null {
+  return isStripeConfigured() ? process.env.STRIPE_PUBLISHABLE_KEY! : null
 }
 
 export function getStripe(): Stripe {
